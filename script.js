@@ -139,7 +139,7 @@ async function handleUpload(event) {
 
     try {
         // Get current content
-        const response = await fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/contents/script.js', {
+        const response = await fetch('https://api.github.com/repos/Shlomo116/Shlomo116.ManagerUser/contents/script.js', {
             headers: {
                 'Authorization': `token ${token}`,
                 'Accept': 'application/vnd.github.v3+json'
@@ -156,7 +156,7 @@ async function handleUpload(event) {
         );
         
         // Update file on GitHub
-        await fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/contents/script.js', {
+        await fetch('https://api.github.com/repos/Shlomo116/Shlomo116.ManagerUser/contents/script.js', {
             method: 'PUT',
             headers: {
                 'Authorization': `token ${token}`,
