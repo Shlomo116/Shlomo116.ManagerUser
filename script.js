@@ -32,6 +32,10 @@ async function loadMoviesFromGitHub(token) {
             const data = await response.json();
             const content = decodeURIComponent(escape(atob(data.content)));
             return JSON.parse(content);
+        } else if (response.status === 404) {
+            // If file doesn't exist, create it with empty array
+            const success = await saveMoviesToGitHub([], token);
+            return success ? [] : null;
         } else {
             console.error('Failed to load movies from GitHub');
             return null;
@@ -52,6 +56,24 @@ async function saveMoviesToGitHub(movies, token) {
     try {
         // Convert Hebrew characters to UTF-8 before encoding
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(movies, null, 2))));
+        
+        // Get current SHA if file exists
+        let sha = null;
+        try {
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                sha = data.sha;
+            }
+        } catch (error) {
+            console.log('File does not exist, will create new file');
+        }
+
         const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
             method: 'PUT',
             headers: {
@@ -62,7 +84,7 @@ async function saveMoviesToGitHub(movies, token) {
             body: JSON.stringify({
                 message: 'Update movies list',
                 content: content,
-                sha: await getFileSha(token)
+                sha: sha
             })
         });
 
@@ -76,27 +98,6 @@ async function saveMoviesToGitHub(movies, token) {
     } catch (error) {
         console.error('Error saving movies:', error);
         return false;
-    }
-}
-
-// Get file SHA for GitHub update
-async function getFileSha(token) {
-    try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
-            headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            return data.sha;
-        }
-        return null;
-    } catch (error) {
-        console.error('Error getting file SHA:', error);
-        return null;
     }
 }
 
@@ -399,19 +400,26 @@ async function handleDelete(event) {
     }
 
     try {
-        const movieIndex = movies.findIndex(m => m.id === movieId);
+        // First, try to load current movies from GitHub
+        const currentMovies = await loadMoviesFromGitHub(token);
+        if (!currentMovies) {
+            alert('שגיאה בטעינת רשימת הסרטים');
+            return;
+        }
+
+        const movieIndex = currentMovies.findIndex(m => m.id === movieId);
         if (movieIndex === -1) {
             alert('סרט לא נמצא');
             return;
         }
 
-        const updatedMovies = movies.filter(m => m.id !== movieId);
-        saveMoviesToStorage(updatedMovies);
-        
+        const updatedMovies = currentMovies.filter(m => m.id !== movieId);
         const success = await saveMoviesToGitHub(updatedMovies, token);
+        
         if (success) {
             movies = updatedMovies;
-            displayMovies(movies);
+            saveMoviesToStorage(updatedMovies);
+            displayMovies(updatedMovies);
             document.getElementById('deleteModal').style.display = 'none';
             document.getElementById('deleteForm').reset();
         } else {
