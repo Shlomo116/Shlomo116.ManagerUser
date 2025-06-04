@@ -1,5 +1,5 @@
 // GitHub API configuration
-const GITHUB_REPO = 'shlomodavid/kosher-movies';
+const GITHUB_REPO = 'Shlomo116/Shlomo116.ManagerUser';
 const GITHUB_PATH = 'movies.json';
 
 // Load movies from localStorage
@@ -13,10 +13,43 @@ function saveMoviesToStorage(movies) {
     localStorage.setItem('movies', JSON.stringify(movies));
 }
 
+// Verify GitHub repository and token
+async function verifyGitHubAccess(token) {
+    try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.ok) {
+            return true;
+        } else if (response.status === 404) {
+            alert('המאגר לא נמצא. אנא וודא שהמאגר קיים ושהטוקן תקין.');
+            return false;
+        } else {
+            const errorData = await response.json();
+            alert(`שגיאה בגישה למאגר: ${errorData.message}`);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error verifying GitHub access:', error);
+        alert('שגיאה בגישה למאגר');
+        return false;
+    }
+}
+
 // Load movies from GitHub
 async function loadMoviesFromGitHub(token) {
     if (!token) {
         console.error('לא הוזן טוקן');
+        return null;
+    }
+
+    // First verify repository access
+    const hasAccess = await verifyGitHubAccess(token);
+    if (!hasAccess) {
         return null;
     }
 
@@ -37,11 +70,14 @@ async function loadMoviesFromGitHub(token) {
             const success = await saveMoviesToGitHub([], token);
             return success ? [] : null;
         } else {
-            console.error('Failed to load movies from GitHub');
+            const errorData = await response.json();
+            console.error('GitHub API Error:', errorData);
+            alert(`שגיאה בטעינת רשימת הסרטים: ${errorData.message}`);
             return null;
         }
     } catch (error) {
         console.error('Error loading movies:', error);
+        alert('שגיאה בטעינת רשימת הסרטים');
         return null;
     }
 }
@@ -50,6 +86,12 @@ async function loadMoviesFromGitHub(token) {
 async function saveMoviesToGitHub(movies, token) {
     if (!token) {
         console.error('לא הוזן טוקן');
+        return false;
+    }
+
+    // First verify repository access
+    const hasAccess = await verifyGitHubAccess(token);
+    if (!hasAccess) {
         return false;
     }
 
@@ -91,12 +133,14 @@ async function saveMoviesToGitHub(movies, token) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('GitHub API Error:', errorData);
+            alert(`שגיאה בשמירת רשימת הסרטים: ${errorData.message}`);
             return false;
         }
 
         return true;
     } catch (error) {
         console.error('Error saving movies:', error);
+        alert('שגיאה בשמירת רשימת הסרטים');
         return false;
     }
 }
