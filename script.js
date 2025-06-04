@@ -6,16 +6,22 @@ const ADMIN_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa82
 // Sample movies data - in a real application, this would come from a database
 let movies = [
     {
-        id: 1,
-        title: 'סרט לדוגמה 1',
-        category: 'comedy',
-        videoId: 'ZQmGPEh4yaU'
+        "id": 1,
+        "title": "סרט לדוגמה 1",
+        "category": "comedy",
+        "videoId": "ZQmGPEh4yaU"
     },
     {
-        id: 2,
-        title: 'סרט לדוגמה 2',
-        category: 'drama',
-        videoId: 'FU2gJooc41E'
+        "id": 2,
+        "title": "סרט לדוגמה 2",
+        "category": "drama",
+        "videoId": "FU2gJooc41E"
+    },
+    {
+        "id": 3,
+        "title": "מחשב",
+        "category": "מחשבים",
+        "videoId": "WacjsHEGY9k"
     }
 ];
 
@@ -69,10 +75,10 @@ function displayMovies(moviesToShow = movies) {
 // Get category name in Hebrew
 function getCategoryName(category) {
     const categories = {
-        'comedy': 'קומדיה',
-        'drama': 'דרמה',
-        'action': 'אקשן',
-        'documentary': 'דוקומנטרי'
+        'comedy': '×§×××××',
+        'drama': '××¨××',
+        'action': '××§×©×',
+        'documentary': '×××§××× ××¨×'
     };
     return categories[category] || category;
 }
@@ -108,14 +114,14 @@ async function handleUpload(event) {
     // Hash the password and compare with stored hash
     const passwordHash = await sha256(password);
     if (passwordHash !== ADMIN_PASSWORD_HASH) {
-        alert('סיסמה שגויה');
+        alert('×¡××¡×× ×©××××');
         return;
     }
     
     // Extract YouTube video ID
     const videoId = getYouTubeId(videoUrl);
     if (!videoId) {
-        alert('קישור לא חוקי. אנא הזן קישור YouTube תקין');
+        alert('×§××©××¨ ×× ×××§×. ×× × ××× ×§××©××¨ YouTube ×ª×§××');
         return;
     }
     
@@ -131,9 +137,9 @@ async function handleUpload(event) {
     movies.push(newMovie);
     
     // Create GitHub API request
-    const token = prompt('אנא הזן את ה-GitHub Personal Access Token שלך:');
+    const token = prompt('×× × ××× ××ª ×-GitHub Personal Access Token ×©××:');
     if (!token) {
-        alert('לא ניתן להעלות סרט ללא טוקן GitHub');
+        alert('×× × ××ª× ×××¢×××ª ×¡×¨× ××× ×××§× GitHub');
         return;
     }
 
@@ -166,7 +172,7 @@ async function handleUpload(event) {
                 'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify({
-                message: 'הוספת סרט חדש',
+                message: '×××¡×¤×ª ×¡×¨× ×××©',
                 content: encodedContent,
                 sha: data.sha
             })
@@ -175,10 +181,10 @@ async function handleUpload(event) {
         displayMovies();
         uploadModal.style.display = 'none';
         uploadForm.reset();
-        alert('הסרט הועלה בהצלחה!');
+        alert('××¡×¨× ×××¢×× ×××¦×××!');
     } catch (error) {
         console.error('Error:', error);
-        alert('אירעה שגיאה בהעלאת הסרט. אנא נסה שוב.');
+        alert('×××¨×¢× ×©×××× ×××¢×××ª ××¡×¨×. ×× × × ×¡× ×©××.');
     }
 }
 
