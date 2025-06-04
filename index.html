@@ -26,10 +26,7 @@
                     <option value="documentary">דוקומנטרי</option>
                 </select>
             </div>
-            <button class="admin-button" id="adminButton">
-                <i class="fas fa-cog"></i>
-                כלי ניהול
-            </button>
+            <button id="adminButton" class="admin-button">כלי ניהול</button>
         </nav>
     </header>
 
@@ -45,18 +42,9 @@
             <span class="close">&times;</span>
             <h2>כלי ניהול</h2>
             <div class="admin-tools">
-                <button class="tool-button" id="addMovieButton">
-                    <i class="fas fa-plus"></i>
-                    הוספת סרט
-                </button>
-                <button class="tool-button" id="editMoviesButton">
-                    <i class="fas fa-edit"></i>
-                    עריכת סרטים
-                </button>
-                <button class="tool-button" id="deleteMoviesButton">
-                    <i class="fas fa-trash"></i>
-                    מחיקת סרטים
-                </button>
+                <button id="addMovieButton" class="tool-button">הוספת סרט</button>
+                <button id="editMoviesButton" class="tool-button">עריכת סרט</button>
+                <button id="deleteMoviesButton" class="tool-button">מחיקת סרט</button>
             </div>
         </div>
     </div>
@@ -68,7 +56,7 @@
             <h2>הוספת סרט חדש</h2>
             <form id="uploadForm">
                 <input type="password" id="adminPassword" placeholder="סיסמת מנהל" required>
-                <input type="text" id="movieTitle" placeholder="שם הסרט" required>
+                <input type="text" id="movieTitle" placeholder="כותרת הסרט" required>
                 <select id="movieCategory" required>
                     <option value="">בחר קטגוריה</option>
                     <option value="comedy">קומדיה</option>
@@ -76,7 +64,7 @@
                     <option value="action">אקשן</option>
                     <option value="documentary">דוקומנטרי</option>
                 </select>
-                <input type="text" id="movieUrl" placeholder="קישור ליוטיוב" required>
+                <input type="url" id="movieUrl" placeholder="קישור ליוטיוב" required>
                 <button type="submit">הוסף סרט</button>
             </form>
         </div>
@@ -90,7 +78,7 @@
             <form id="editForm">
                 <input type="hidden" id="editMovieId">
                 <input type="password" id="editAdminPassword" placeholder="סיסמת מנהל" required>
-                <input type="text" id="editMovieTitle" placeholder="שם הסרט" required>
+                <input type="text" id="editMovieTitle" placeholder="כותרת הסרט" required>
                 <select id="editMovieCategory" required>
                     <option value="">בחר קטגוריה</option>
                     <option value="comedy">קומדיה</option>
@@ -98,6 +86,7 @@
                     <option value="action">אקשן</option>
                     <option value="documentary">דוקומנטרי</option>
                 </select>
+                <input type="url" id="editMovieUrl" placeholder="קישור ליוטיוב" required>
                 <button type="submit">שמור שינויים</button>
             </form>
         </div>
@@ -113,8 +102,8 @@
                 <input type="password" id="deleteAdminPassword" placeholder="סיסמת מנהל" required>
                 <p>האם אתה בטוח שברצונך למחוק את הסרט?</p>
                 <div class="delete-buttons">
-                    <button type="submit" class="delete-button">מחק סרט</button>
-                    <button type="button" class="cancel-button" onclick="document.getElementById('deleteModal').style.display='none'">ביטול</button>
+                    <button type="submit">מחק</button>
+                    <button type="button" class="cancel-button">ביטול</button>
                 </div>
             </form>
         </div>

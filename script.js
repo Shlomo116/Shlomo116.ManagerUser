@@ -30,7 +30,7 @@ async function loadMoviesFromGitHub(token) {
 
         if (response.ok) {
             const data = await response.json();
-            const content = atob(data.content);
+            const content = decodeURIComponent(escape(atob(data.content)));
             return JSON.parse(content);
         } else {
             console.error('Failed to load movies from GitHub');
@@ -50,7 +50,8 @@ async function saveMoviesToGitHub(movies, token) {
     }
 
     try {
-        const content = btoa(JSON.stringify(movies, null, 2));
+        // Convert Hebrew characters to UTF-8 before encoding
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(movies, null, 2))));
         const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
             method: 'PUT',
             headers: {
@@ -65,7 +66,13 @@ async function saveMoviesToGitHub(movies, token) {
             })
         });
 
-        return response.ok;
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('GitHub API Error:', errorData);
+            return false;
+        }
+
+        return true;
     } catch (error) {
         console.error('Error saving movies:', error);
         return false;
@@ -234,9 +241,7 @@ async function handleUpload(event) {
             id: Date.now().toString(),
             title,
             category,
-            videoId,
-            likes: 0,
-            dislikes: 0
+            videoId
         };
         
         movies.push(newMovie);
@@ -256,6 +261,168 @@ async function handleUpload(event) {
     }
 }
 
+// Show movie selection modal
+function showMovieSelectionModal(action) {
+    // Create modal container
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.style.zIndex = '1000';
+
+    // Create modal content
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.maxHeight = '80vh';
+    content.style.overflowY = 'auto';
+
+    // Add close button
+    const closeButton = document.createElement('span');
+    closeButton.className = 'close';
+    closeButton.innerHTML = '&times;';
+    closeButton.style.position = 'absolute';
+    closeButton.style.right = '10px';
+    closeButton.style.top = '10px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontSize = '24px';
+
+    // Add title
+    const title = document.createElement('h2');
+    title.textContent = `בחר סרט ל${action === 'edit' ? 'עריכה' : 'מחיקה'}`;
+
+    // Create movie list container
+    const movieList = document.createElement('div');
+    movieList.className = 'movie-selection-list';
+    movieList.style.marginTop = '20px';
+
+    // Add movies to the list
+    movies.forEach(movie => {
+        const movieItem = document.createElement('div');
+        movieItem.className = 'movie-selection-item';
+        movieItem.style.display = 'flex';
+        movieItem.style.alignItems = 'center';
+        movieItem.style.padding = '10px';
+        movieItem.style.border = '1px solid #ddd';
+        movieItem.style.marginBottom = '10px';
+        movieItem.style.cursor = 'pointer';
+        movieItem.style.borderRadius = '4px';
+        movieItem.dataset.id = movie.id;
+
+        const img = document.createElement('img');
+        img.src = `https://img.youtube.com/vi/${movie.videoId}/hqdefault.jpg`;
+        img.alt = movie.title;
+        img.style.width = '120px';
+        img.style.height = '68px';
+        img.style.objectFit = 'cover';
+        img.style.marginLeft = '10px';
+        img.style.borderRadius = '4px';
+
+        const info = document.createElement('div');
+        info.className = 'movie-selection-info';
+        info.style.flex = '1';
+
+        const movieTitle = document.createElement('h3');
+        movieTitle.textContent = movie.title;
+        movieTitle.style.margin = '0';
+        movieTitle.style.fontSize = '16px';
+
+        const movieCategory = document.createElement('p');
+        movieCategory.textContent = getCategoryName(movie.category);
+        movieCategory.style.margin = '5px 0 0';
+        movieCategory.style.color = '#666';
+        movieCategory.style.fontSize = '14px';
+
+        info.appendChild(movieTitle);
+        info.appendChild(movieCategory);
+        movieItem.appendChild(img);
+        movieItem.appendChild(info);
+        movieList.appendChild(movieItem);
+
+        // Add click event
+        movieItem.addEventListener('click', () => {
+            document.body.removeChild(modal);
+            
+            if (action === 'edit') {
+                const editModal = document.getElementById('editModal');
+                document.getElementById('editMovieId').value = movie.id;
+                document.getElementById('editMovieTitle').value = movie.title;
+                document.getElementById('editMovieCategory').value = movie.category;
+                document.getElementById('editMovieUrl').value = `https://www.youtube.com/watch?v=${movie.videoId}`;
+                editModal.style.display = 'block';
+            } else if (action === 'delete') {
+                const deleteModal = document.getElementById('deleteModal');
+                document.getElementById('deleteMovieId').value = movie.id;
+                deleteModal.style.display = 'block';
+            }
+        });
+    });
+
+    // Add close button event
+    closeButton.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+
+    // Assemble modal
+    content.appendChild(closeButton);
+    content.appendChild(title);
+    content.appendChild(movieList);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    });
+}
+
+// Update handleDelete function
+async function handleDelete(event) {
+    event.preventDefault();
+    
+    const password = document.getElementById('deleteAdminPassword').value;
+    if (!verifyAdminPassword(password)) {
+        alert('סיסמה שגויה');
+        return;
+    }
+
+    const movieId = document.getElementById('deleteMovieId').value;
+    if (!movieId) {
+        alert('לא נבחר סרט למחיקה');
+        return;
+    }
+
+    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    if (!token) {
+        alert('לא הוזן טוקן');
+        return;
+    }
+
+    try {
+        const movieIndex = movies.findIndex(m => m.id === movieId);
+        if (movieIndex === -1) {
+            alert('סרט לא נמצא');
+            return;
+        }
+
+        const updatedMovies = movies.filter(m => m.id !== movieId);
+        saveMoviesToStorage(updatedMovies);
+        
+        const success = await saveMoviesToGitHub(updatedMovies, token);
+        if (success) {
+            movies = updatedMovies;
+            displayMovies(movies);
+            document.getElementById('deleteModal').style.display = 'none';
+            document.getElementById('deleteForm').reset();
+        } else {
+            alert('שגיאה במחיקת הסרט מגיט האב');
+        }
+    } catch (error) {
+        console.error('Error deleting movie:', error);
+        alert('שגיאה במחיקת הסרט');
+    }
+}
+
 // Update handleEdit function
 async function handleEdit(event) {
     event.preventDefault();
@@ -267,6 +434,11 @@ async function handleEdit(event) {
     }
 
     const movieId = document.getElementById('editMovieId').value;
+    if (!movieId) {
+        alert('לא נבחר סרט לעריכה');
+        return;
+    }
+
     const title = document.getElementById('editMovieTitle').value;
     const category = document.getElementById('editMovieCategory').value;
     const url = document.getElementById('editMovieUrl').value;
@@ -284,9 +456,7 @@ async function handleEdit(event) {
     }
 
     try {
-        const movies = loadMoviesFromStorage();
         const movieIndex = movies.findIndex(m => m.id === movieId);
-        
         if (movieIndex === -1) {
             alert('סרט לא נמצא');
             return;
@@ -312,105 +482,6 @@ async function handleEdit(event) {
     } catch (error) {
         console.error('Error editing movie:', error);
         alert('שגיאה בעריכת הסרט');
-    }
-}
-
-// Show movie selection modal
-function showMovieSelectionModal(action) {
-    const movies = loadMoviesFromStorage();
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.display = 'block';
-
-    const content = document.createElement('div');
-    content.className = 'modal-content';
-    content.innerHTML = `
-        <span class="close">&times;</span>
-        <h2>בחר סרט ל${action === 'edit' ? 'עריכה' : 'מחיקה'}</h2>
-        <div class="movie-selection-list">
-            ${movies.map(movie => `
-                <div class="movie-selection-item" data-id="${movie.id}">
-                    <img src="https://img.youtube.com/vi/${movie.videoId}/hqdefault.jpg" alt="${movie.title}">
-                    <div class="movie-selection-info">
-                        <h3>${movie.title}</h3>
-                        <p>${getCategoryName(movie.category)}</p>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-
-    modal.appendChild(content);
-    document.body.appendChild(modal);
-
-    // Add click event to close button
-    const closeButton = content.querySelector('.close');
-    closeButton.addEventListener('click', () => {
-        document.body.removeChild(modal);
-    });
-
-    // Add click events to movie items
-    content.querySelectorAll('.movie-selection-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const movieId = item.dataset.id;
-            document.body.removeChild(modal);
-            
-            if (action === 'edit') {
-                const movie = movies.find(m => m.id === movieId);
-                if (movie) {
-                    document.getElementById('editMovieId').value = movie.id;
-                    document.getElementById('editMovieTitle').value = movie.title;
-                    document.getElementById('editMovieCategory').value = movie.category;
-                    document.getElementById('editModal').style.display = 'block';
-                }
-            } else if (action === 'delete') {
-                document.getElementById('deleteMovieId').value = movieId;
-                document.getElementById('deleteModal').style.display = 'block';
-            }
-        });
-    });
-}
-
-// Update handleDelete function
-async function handleDelete(event) {
-    event.preventDefault();
-    
-    const password = document.getElementById('deleteAdminPassword').value;
-    if (!verifyAdminPassword(password)) {
-        alert('סיסמה שגויה');
-        return;
-    }
-
-    const movieId = document.getElementById('deleteMovieId').value;
-
-    const token = prompt('הזן את טוקן הגיט האב שלך:');
-    if (!token) {
-        alert('לא הוזן טוקן');
-        return;
-    }
-
-    try {
-        const movies = loadMoviesFromStorage();
-        const updatedMovies = movies.filter(m => m.id !== movieId);
-        
-        if (updatedMovies.length === movies.length) {
-            alert('סרט לא נמצא');
-            return;
-        }
-
-        saveMoviesToStorage(updatedMovies);
-        const success = await saveMoviesToGitHub(updatedMovies, token);
-        
-        if (success) {
-            displayMovies(updatedMovies);
-            document.getElementById('deleteModal').style.display = 'none';
-            document.getElementById('deleteForm').reset();
-        } else {
-            alert('שגיאה במחיקת הסרט מגיט האב');
-        }
-    } catch (error) {
-        console.error('Error deleting movie:', error);
-        alert('שגיאה במחיקת הסרט');
     }
 }
 
