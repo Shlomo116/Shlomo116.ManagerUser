@@ -1,5 +1,6 @@
-// Admin password - in a real application, this should be stored securely on the server
-const ADMIN_PASSWORD = 'admin123';
+// Admin password hash - this is a simple hash for demonstration
+// In a real application, you would use a proper backend with secure password storage
+const ADMIN_PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
 
 // Sample movies data - in a real application, this would come from a database
 let movies = [
@@ -7,15 +8,15 @@ let movies = [
         id: 1,
         title: 'סרט לדוגמה 1',
         category: 'comedy',
-        thumbnail: 'https://via.placeholder.com/300x150',
-        videoUrl: 'path/to/video1.mp4'
+        thumbnail: 'https://img.youtube.com/vi/ZQmGPEh4yaU/maxresdefault.jpg',
+        videoUrl: 'https://www.youtube.com/watch?v=ZQmGPEh4yaU'
     },
     {
         id: 2,
         title: 'סרט לדוגמה 2',
         category: 'drama',
-        thumbnail: 'https://via.placeholder.com/300x150',
-        videoUrl: 'path/to/video2.mp4'
+        thumbnail: 'https://img.youtube.com/vi/FU2gJooc41E/maxresdefault.jpg',
+        videoUrl: 'https://www.youtube.com/watch?v=FU2gJooc41E'
     }
 ];
 
@@ -27,6 +28,16 @@ const categorySelect = document.getElementById('categorySelect');
 const uploadModal = document.getElementById('uploadModal');
 const uploadForm = document.getElementById('uploadForm');
 const closeModal = document.querySelector('.close');
+const uploadButton = document.getElementById('uploadButton');
+
+// Simple SHA-256 hash function
+async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
 
 // Display movies
 function displayMovies(moviesToShow = movies) {
@@ -73,31 +84,33 @@ function searchMovies() {
 
 // Play movie
 function playMovie(movie) {
-    // In a real application, this would open a video player
-    alert(`נגן סרט: ${movie.title}`);
+    window.open(movie.videoUrl, '_blank');
 }
 
 // Upload functionality
-function handleUpload(event) {
+async function handleUpload(event) {
     event.preventDefault();
     
     const password = document.getElementById('adminPassword').value;
     const title = document.getElementById('movieTitle').value;
     const category = document.getElementById('movieCategory').value;
-    const file = document.getElementById('movieFile').files[0];
+    const videoUrl = document.getElementById('movieUrl').value;
+    const thumbnailUrl = document.getElementById('thumbnailUrl').value;
     
-    if (password !== ADMIN_PASSWORD) {
+    // Hash the password and compare with stored hash
+    const passwordHash = await sha256(password);
+    if (passwordHash !== ADMIN_PASSWORD_HASH) {
         alert('סיסמה שגויה');
         return;
     }
     
-    // In a real application, this would upload the file to a server
+    // In a real application, this would be saved to a database
     const newMovie = {
         id: movies.length + 1,
         title,
         category,
-        thumbnail: 'https://via.placeholder.com/300x150',
-        videoUrl: URL.createObjectURL(file)
+        thumbnail: thumbnailUrl,
+        videoUrl: videoUrl
     };
     
     movies.push(newMovie);
@@ -115,6 +128,10 @@ categorySelect.addEventListener('change', searchMovies);
 uploadForm.addEventListener('submit', handleUpload);
 
 // Modal functionality
+uploadButton.addEventListener('click', () => {
+    uploadModal.style.display = 'block';
+});
+
 document.addEventListener('click', (e) => {
     if (e.target === uploadModal) {
         uploadModal.style.display = 'none';

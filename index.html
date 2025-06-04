@@ -23,6 +23,7 @@
                     <option value="documentary">דוקומנטרי</option>
                 </select>
             </div>
+            <button id="uploadButton" class="upload-button">העלה סרט</button>
         </nav>
     </header>
 
@@ -40,7 +41,8 @@
                 <input type="password" id="adminPassword" placeholder="סיסמת מנהל" required>
                 <input type="text" id="movieTitle" placeholder="שם הסרט" required>
                 <input type="text" id="movieCategory" placeholder="קטגוריה" required>
-                <input type="file" id="movieFile" accept="video/*" required>
+                <input type="url" id="movieUrl" placeholder="קישור לסרטון (YouTube או אחר)" required>
+                <input type="url" id="thumbnailUrl" placeholder="קישור לתמונה ממוזערת" required>
                 <button type="submit">העלה סרט</button>
             </form>
         </div>
