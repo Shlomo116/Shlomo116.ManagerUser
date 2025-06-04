@@ -21,8 +21,35 @@ const defaultMovies = [
 // Initialize movies array
 let movies = [];
 
-// Load movies from GitHub
-async function loadMoviesFromGitHub(token) {
+// Load movies from GitHub (public access)
+async function loadMoviesFromGitHub() {
+    try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
+            headers: {
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const content = decodeURIComponent(escape(atob(data.content)));
+            return JSON.parse(content);
+        } else if (response.status === 404) {
+            // If file doesn't exist, return default movies
+            console.log('Movies file not found, using default movies...');
+            return defaultMovies;
+        } else {
+            console.error('Failed to load movies from GitHub');
+            return defaultMovies;
+        }
+    } catch (error) {
+        console.error('Error loading movies:', error);
+        return defaultMovies;
+    }
+}
+
+// Load movies from GitHub with token (admin access)
+async function loadMoviesFromGitHubWithToken(token) {
     if (!token) {
         console.error('לא הוזן טוקן');
         return null;
@@ -58,7 +85,7 @@ async function loadMoviesFromGitHub(token) {
     }
 }
 
-// Save movies to GitHub
+// Save movies to GitHub (admin only)
 async function saveMoviesToGitHub(movies, token) {
     if (!token) {
         console.error('לא הוזן טוקן');
@@ -237,7 +264,7 @@ async function handleUpload(event) {
 
     try {
         // First, load current movies from GitHub
-        const currentMovies = await loadMoviesFromGitHub(token);
+        const currentMovies = await loadMoviesFromGitHubWithToken(token);
         if (!currentMovies) {
             alert('שגיאה בטעינת רשימת הסרטים');
             return;
@@ -406,8 +433,8 @@ async function handleDelete(event) {
     }
 
     try {
-        // First, try to load current movies from GitHub
-        const currentMovies = await loadMoviesFromGitHub(token);
+        // First, load current movies from GitHub
+        const currentMovies = await loadMoviesFromGitHubWithToken(token);
         if (!currentMovies) {
             alert('שגיאה בטעינת רשימת הסרטים');
             return;
@@ -471,7 +498,7 @@ async function handleEdit(event) {
 
     try {
         // First, load current movies from GitHub
-        const currentMovies = await loadMoviesFromGitHub(token);
+        const currentMovies = await loadMoviesFromGitHubWithToken(token);
         if (!currentMovies) {
             alert('שגיאה בטעינת רשימת הסרטים');
             return;
@@ -510,20 +537,10 @@ async function handleEdit(event) {
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load movies from GitHub
-    const token = prompt('הזן את טוקן הגיט האב שלך:');
-    if (token) {
-        const loadedMovies = await loadMoviesFromGitHub(token);
-        if (loadedMovies) {
-            movies = loadedMovies;
-            displayMovies(movies);
-        } else {
-            alert('שגיאה בטעינת רשימת הסרטים');
-        }
-    } else {
-        alert('לא הוזן טוקן, לא ניתן לטעון את רשימת הסרטים');
-    }
-    
+    // Load movies from GitHub (public access)
+    const loadedMovies = await loadMoviesFromGitHub();
+    movies = loadedMovies;
+    displayMovies(movies);
     setupEventListeners();
 });
 
