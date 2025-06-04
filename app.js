@@ -2,27 +2,49 @@
 let isLoggedIn = false;
 
 // אתחול
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // בדיקת טוקן GitHub
+    const githubToken = localStorage.getItem('githubToken');
+    if (!githubToken) {
+        const token = prompt('אנא הזן את טוקן ה-GitHub שלך:');
+        if (token) {
+            localStorage.setItem('githubToken', token);
+            // יצירת Gists חדשים
+            await Promise.all([
+                adminManager.createGist(),
+                usersManager.createGist()
+            ]);
+        } else {
+            alert('לא ניתן להמשיך ללא טוקן GitHub');
+            return;
+        }
+    }
+
     // בדיקת התחברות
     if (localStorage.getItem('isLoggedIn') === 'true') {
         showMainPage();
-        loadUsers();
+        await loadUsers();
     }
 
     // טיפול בטופס התחברות
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         
-        const adminConfig = JSON.parse(localStorage.getItem('adminConfig'));
-        if (username === adminConfig.username && password === adminConfig.password) {
-            isLoggedIn = true;
-            localStorage.setItem('isLoggedIn', 'true');
-            showMainPage();
-            loadUsers();
-        } else {
-            alert('שם משתמש או סיסמא שגויים');
+        try {
+            const adminConfig = await adminManager.loadConfig();
+            if (username === adminConfig.username && password === adminConfig.password) {
+                isLoggedIn = true;
+                localStorage.setItem('isLoggedIn', 'true');
+                showMainPage();
+                await loadUsers();
+            } else {
+                alert('שם משתמש או סיסמא שגויים');
+            }
+        } catch (error) {
+            console.error('Error during login:', error);
+            alert('שגיאה בהתחברות. אנא נסה שוב.');
         }
     });
 });
@@ -52,12 +74,12 @@ function showAddUserModal() {
     modal.show();
 }
 
-function loadUsers() {
-    const users = usersManager.getAllUsers();
-    displayUsers(users);
+async function loadUsers() {
+    await usersManager.loadUsers();
+    displayUsers(usersManager.getAllUsers());
 }
 
-function saveUser() {
+async function saveUser() {
     const userId = document.getElementById('userId').value;
     const name = document.getElementById('userName').value;
     const email = document.getElementById('userEmail').value;
@@ -70,7 +92,7 @@ function saveUser() {
 
     if (userId) {
         // עדכון משתמש קיים
-        usersManager.updateUser(parseInt(userId), { name, email, phone });
+        await usersManager.updateUser(parseInt(userId), { name, email, phone });
     } else {
         // הוספת משתמש חדש
         const newUser = {
@@ -80,17 +102,17 @@ function saveUser() {
             phone,
             createdAt: new Date().toISOString()
         };
-        usersManager.addUser(newUser);
+        await usersManager.addUser(newUser);
     }
 
     bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
-    loadUsers();
+    await loadUsers();
 }
 
-function deleteUser(userId) {
+async function deleteUser(userId) {
     if (confirm('האם אתה בטוח שברצונך למחוק משתמש זה?')) {
-        usersManager.deleteUser(userId);
-        loadUsers();
+        await usersManager.deleteUser(userId);
+        await loadUsers();
     }
 }
 
@@ -117,7 +139,7 @@ function displayUsers(users) {
     });
 }
 
-function editUser(userId) {
+async function editUser(userId) {
     const users = usersManager.getAllUsers();
     const user = users.find(u => u.id === userId);
     
