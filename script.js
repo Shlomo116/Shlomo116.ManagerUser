@@ -155,6 +155,9 @@ async function handleUpload(event) {
             `let movies = ${JSON.stringify(movies, null, 4)};`
         );
         
+        // Encode content to base64 safely
+        const encodedContent = btoa(unescape(encodeURIComponent(updatedContent)));
+        
         // Update file on GitHub
         await fetch('https://api.github.com/repos/Shlomo116/Shlomo116.ManagerUser/contents/script.js', {
             method: 'PUT',
@@ -164,7 +167,7 @@ async function handleUpload(event) {
             },
             body: JSON.stringify({
                 message: 'הוספת סרט חדש',
-                content: btoa(updatedContent),
+                content: encodedContent,
                 sha: data.sha
             })
         });
