@@ -3,18 +3,26 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.container {
+    max-width: 1200px;
 }
 
 .table {
     background-color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
 }
 
 .btn-primary {
     background-color: #0d6efd;
     border-color: #0d6efd;
+    padding: 8px 16px;
 }
 
 .btn-primary:hover {
@@ -24,22 +32,36 @@ body {
 
 .modal-content {
     border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
 }
 
 .form-control:focus {
-    border-color: #0d6efd;
+    border-color: #86b7fe;
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-.table th {
+.action-buttons .btn {
+    padding: 4px 8px;
+    margin: 0 2px;
+}
+
+.table-hover tbody tr:hover {
     background-color: #f8f9fa;
-    font-weight: 600;
+    cursor: pointer;
 }
 
-.table td {
-    vertical-align: middle;
-}
-
-.bi {
-    margin-right: 4px;
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .table-responsive {
+        margin: 0 -10px;
+    }
 } 

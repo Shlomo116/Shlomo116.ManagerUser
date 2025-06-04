@@ -9,6 +9,7 @@
     <link href="styles.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Login Page -->
     <div id="loginPage" class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
@@ -17,8 +18,12 @@
                         <h2 class="card-title text-center mb-4">התחברות למערכת</h2>
                         <form id="loginForm">
                             <div class="mb-3">
-                                <label for="githubToken" class="form-label">GitHub Token</label>
-                                <input type="password" class="form-control" id="githubToken" required>
+                                <label for="username" class="form-label">שם משתמש</label>
+                                <input type="text" class="form-control" id="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">סיסמא</label>
+                                <input type="password" class="form-control" id="password" required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">התחבר</button>
                         </form>
@@ -28,46 +33,55 @@
         </div>
     </div>
 
-    <div id="mainPage" class="container mt-5" style="display: none;">
+    <!-- Main Page -->
+    <div id="mainPage" class="container mt-4" style="display: none;">
         <div class="row mb-4">
             <div class="col">
-                <h2>ניהול משתמשים</h2>
+                <h1 class="text-center">מערכת ניהול משתמשים</h1>
             </div>
+        </div>
+
+        <div class="row mb-4">
             <div class="col text-start">
-                <button class="btn btn-primary me-2" onclick="showAddUserModal()">
-                    <i class="bi bi-plus-lg"></i> הוסף משתמש
+                <button class="btn btn-primary" onclick="showAddUserModal()">
+                    <i class="bi bi-plus-lg"></i> הוסף משתמש חדש
                 </button>
-                <button class="btn btn-outline-danger" onclick="logout()">
+                <button class="btn btn-outline-danger ms-2" onclick="logout()">
                     <i class="bi bi-box-arrow-right"></i> התנתק
                 </button>
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>שם</th>
-                        <th>אימייל</th>
-                        <th>טלפון</th>
-                        <th>תאריך הוספה</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTableBody"></tbody>
-            </table>
+        <div class="row">
+            <div class="col">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>שם</th>
+                                <th>אימייל</th>
+                                <th>טלפון</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal for adding new user -->
-    <div class="modal fade" id="addUserModal" tabindex="-1">
+    <!-- Modal for adding/editing user -->
+    <div class="modal fade" id="userModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">הוספת משתמש חדש</h5>
+                    <h5 class="modal-title" id="modalTitle">הוספת משתמש חדש</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addUserForm">
+                    <form id="userForm">
+                        <input type="hidden" id="userId">
                         <div class="mb-3">
                             <label for="userName" class="form-label">שם</label>
                             <input type="text" class="form-control" id="userName" required>
@@ -84,7 +98,26 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
-                    <button type="button" class="btn btn-primary" onclick="addUser()">הוסף</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUser()">שמור</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">מחיקת משתמש</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    האם אתה בטוח שברצונך למחוק משתמש זה?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">מחק</button>
                 </div>
             </div>
         </div>
