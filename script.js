@@ -21,7 +21,7 @@ let movies = [
         "id": 3,
         "title": "מחשב",
         "category": "מחשבים",
-        "videoId": "WacjsHEGY9k"
+        "videoId": "V4JTEaNDmH8"
     }
 ];
 
@@ -75,10 +75,10 @@ function displayMovies(moviesToShow = movies) {
 // Get category name in Hebrew
 function getCategoryName(category) {
     const categories = {
-        'comedy': '×§×××××',
-        'drama': '××¨××',
-        'action': '××§×©×',
-        'documentary': '×××§××× ××¨×'
+        'comedy': 'ÃÂ§ÃÂÃÂÃÂÃÂÃÂ',
+        'drama': 'ÃÂÃÂ¨ÃÂÃÂ',
+        'action': 'ÃÂÃÂ§ÃÂ©ÃÂ',
+        'documentary': 'ÃÂÃÂÃÂ§ÃÂÃÂÃÂ ÃÂÃÂ¨ÃÂ'
     };
     return categories[category] || category;
 }
@@ -114,14 +114,14 @@ async function handleUpload(event) {
     // Hash the password and compare with stored hash
     const passwordHash = await sha256(password);
     if (passwordHash !== ADMIN_PASSWORD_HASH) {
-        alert('×¡××¡×× ×©××××');
+        alert('ÃÂ¡ÃÂÃÂ¡ÃÂÃÂ ÃÂ©ÃÂÃÂÃÂÃÂ');
         return;
     }
     
     // Extract YouTube video ID
     const videoId = getYouTubeId(videoUrl);
     if (!videoId) {
-        alert('×§××©××¨ ×× ×××§×. ×× × ××× ×§××©××¨ YouTube ×ª×§××');
+        alert('ÃÂ§ÃÂÃÂ©ÃÂÃÂ¨ ÃÂÃÂ ÃÂÃÂÃÂ§ÃÂ. ÃÂÃÂ ÃÂ ÃÂÃÂÃÂ ÃÂ§ÃÂÃÂ©ÃÂÃÂ¨ YouTube ÃÂªÃÂ§ÃÂÃÂ');
         return;
     }
     
@@ -137,9 +137,9 @@ async function handleUpload(event) {
     movies.push(newMovie);
     
     // Create GitHub API request
-    const token = prompt('×× × ××× ××ª ×-GitHub Personal Access Token ×©××:');
+    const token = prompt('ÃÂÃÂ ÃÂ ÃÂÃÂÃÂ ÃÂÃÂª ÃÂ-GitHub Personal Access Token ÃÂ©ÃÂÃÂ:');
     if (!token) {
-        alert('×× × ××ª× ×××¢×××ª ×¡×¨× ××× ×××§× GitHub');
+        alert('ÃÂÃÂ ÃÂ ÃÂÃÂªÃÂ ÃÂÃÂÃÂ¢ÃÂÃÂÃÂª ÃÂ¡ÃÂ¨ÃÂ ÃÂÃÂÃÂ ÃÂÃÂÃÂ§ÃÂ GitHub');
         return;
     }
 
@@ -172,7 +172,7 @@ async function handleUpload(event) {
                 'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify({
-                message: '×××¡×¤×ª ×¡×¨× ×××©',
+                message: 'ÃÂÃÂÃÂ¡ÃÂ¤ÃÂª ÃÂ¡ÃÂ¨ÃÂ ÃÂÃÂÃÂ©',
                 content: encodedContent,
                 sha: data.sha
             })
@@ -181,10 +181,10 @@ async function handleUpload(event) {
         displayMovies();
         uploadModal.style.display = 'none';
         uploadForm.reset();
-        alert('××¡×¨× ×××¢×× ×××¦×××!');
+        alert('ÃÂÃÂ¡ÃÂ¨ÃÂ ÃÂÃÂÃÂ¢ÃÂÃÂ ÃÂÃÂÃÂ¦ÃÂÃÂÃÂ!');
     } catch (error) {
         console.error('Error:', error);
-        alert('×××¨×¢× ×©×××× ×××¢×××ª ××¡×¨×. ×× × × ×¡× ×©××.');
+        alert('ÃÂÃÂÃÂ¨ÃÂ¢ÃÂ ÃÂ©ÃÂÃÂÃÂÃÂ ÃÂÃÂÃÂ¢ÃÂÃÂÃÂª ÃÂÃÂ¡ÃÂ¨ÃÂ. ÃÂÃÂ ÃÂ ÃÂ ÃÂ¡ÃÂ ÃÂ©ÃÂÃÂ.');
     }
 }
 
