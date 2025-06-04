@@ -231,10 +231,25 @@
     <script>
         let player;
         let currentMovie;
-        const videoId = new URLSearchParams(window.location.search).get('v');
 
-        if (!videoId) {
-            window.location.href = 'index.html';
+        // Utility: get videoId from URL
+        function getVideoIdFromUrl() {
+            return new URLSearchParams(window.location.search).get('v');
+        }
+
+        // Update player to new videoId
+        function updatePlayer(newVideoId) {
+            if (player && typeof player.loadVideoById === 'function') {
+                player.loadVideoById(newVideoId);
+            } else {
+                // If player not ready, reload page as fallback
+                window.location.href = `player.html?v=${newVideoId}`;
+            }
+        }
+
+        // Update related movies and currentMovie
+        async function updateRelatedMoviesAndCurrentMovie() {
+            await displayRelatedMovies();
         }
 
         // Extract videoId from any YouTube URL format
@@ -281,6 +296,7 @@
 
         // Display related movies
         async function displayRelatedMovies() {
+            const videoId = getVideoIdFromUrl();
             const movies = await loadMoviesFromGitHub();
             // סינון סרטים עם videoId תקני בלבד
             const validMovies = movies.filter(movie => {
@@ -313,7 +329,7 @@
             relatedMoviesContainer.innerHTML = relatedMovies.map(movie => {
                 const movieVideoId = extractVideoId(movie.url) || movie.videoId;
                 return `
-                    <a href="player.html?v=${movieVideoId}" class="related-movie">
+                    <a href="#" class="related-movie" data-videoid="${movieVideoId}">
                         <img src="https://img.youtube.com/vi/${movieVideoId}/hqdefault.jpg" alt="${movie.title}">
                         <div class="related-movie-info">
                             <h4>${movie.title}</h4>
@@ -322,6 +338,20 @@
                     </a>
                 `;
             }).join('');
+
+            // Add click event listeners to related movies
+            document.querySelectorAll('.related-movie').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const newVideoId = this.getAttribute('data-videoid');
+                    if (newVideoId) {
+                        // Update URL without reloading
+                        window.history.pushState({}, '', `?v=${newVideoId}`);
+                        updatePlayer(newVideoId);
+                        updateRelatedMoviesAndCurrentMovie();
+                    }
+                });
+            });
         }
 
         // Get category name in Hebrew
@@ -336,6 +366,7 @@
         }
 
         function onYouTubeIframeAPIReady() {
+            const videoId = getVideoIdFromUrl();
             // Always show the player, even if not found in DB
             player = new YT.Player('player', {
                 height: '100%',
@@ -366,6 +397,13 @@
             if (event.key === 'Escape') {
                 window.location.href = 'index.html';
             }
+        });
+
+        // Listen to browser navigation (back/forward)
+        window.addEventListener('popstate', function() {
+            const videoId = getVideoIdFromUrl();
+            updatePlayer(videoId);
+            updateRelatedMoviesAndCurrentMovie();
         });
     </script>
 </body>
