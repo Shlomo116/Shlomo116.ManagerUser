@@ -238,23 +238,22 @@
         }
 
         // Extract videoId from any YouTube URL format
-        function extractVideoId(url) {
-            if (!url) return null;
-            
+        function extractVideoId(urlOrId) {
+            if (!urlOrId) return null;
+            // If it's already a plain videoId (11 chars, no special chars)
+            if (/^[a-zA-Z0-9_-]{11}$/.test(urlOrId)) return urlOrId;
             // Handle different YouTube URL formats
             const patterns = [
                 /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?.*&v=)([^&\n?#]+)/,
                 /youtube\.com\/shorts\/([^&\n?#]+)/,
                 /youtube\.com\/watch\?.*v=([^&\n?#]+)/
             ];
-
             for (const pattern of patterns) {
-                const match = url.match(pattern);
+                const match = urlOrId.match(pattern);
                 if (match && match[1]) {
                     return match[1];
                 }
             }
-
             return null;
         }
 
@@ -266,7 +265,6 @@
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
-
                 if (response.ok) {
                     const data = await response.json();
                     const content = decodeURIComponent(escape(atob(data.content)));
@@ -284,27 +282,28 @@
         // Display related movies
         async function displayRelatedMovies() {
             const movies = await loadMoviesFromGitHub();
-            
-            // Find the current movie by matching videoId from any URL format
+            // Find the current movie by matching videoId from url or videoId field
             currentMovie = movies.find(movie => {
-                const movieVideoId = extractVideoId(movie.url);
+                const movieVideoId = extractVideoId(movie.url) || movie.videoId;
                 return movieVideoId === videoId;
             });
-            
             if (!currentMovie) {
-                console.error('Movie not found:', videoId);
-                window.location.href = 'index.html';
+                // If not found, just show the player and empty related list
+                console.warn('Movie not found in DB, showing player only:', videoId);
+                document.getElementById('relatedMovies').innerHTML = '<div style="text-align:center;color:#888;">לא נמצאו סרטים קשורים</div>';
                 return;
             }
-
             const relatedMovies = movies.filter(movie => {
-                const movieVideoId = extractVideoId(movie.url);
+                const movieVideoId = extractVideoId(movie.url) || movie.videoId;
                 return movie.category === currentMovie.category && movieVideoId !== videoId;
             });
-
             const relatedMoviesContainer = document.getElementById('relatedMovies');
+            if (relatedMovies.length === 0) {
+                relatedMoviesContainer.innerHTML = '<div style="text-align:center;color:#888;">לא נמצאו סרטים קשורים</div>';
+                return;
+            }
             relatedMoviesContainer.innerHTML = relatedMovies.map(movie => {
-                const movieVideoId = extractVideoId(movie.url);
+                const movieVideoId = extractVideoId(movie.url) || movie.videoId;
                 return `
                     <a href="player.html?v=${movieVideoId}" class="related-movie">
                         <img src="https://img.youtube.com/vi/${movieVideoId}/hqdefault.jpg" alt="${movie.title}">
@@ -329,6 +328,7 @@
         }
 
         function onYouTubeIframeAPIReady() {
+            // Always show the player, even if not found in DB
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
@@ -343,7 +343,6 @@
                     'onStateChange': onPlayerStateChange
                 }
             });
-
             // Load and display related movies
             displayRelatedMovies();
         }
