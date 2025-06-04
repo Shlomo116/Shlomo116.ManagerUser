@@ -28,24 +28,6 @@ const uploadModal = document.getElementById('uploadModal');
 const uploadForm = document.getElementById('uploadForm');
 const closeModal = document.querySelectorAll('.close');
 const uploadButton = document.getElementById('uploadButton');
-const playerModal = document.getElementById('playerModal');
-const videoPlayer = document.getElementById('videoPlayer');
-
-let player;
-
-// YouTube API initialization
-function onYouTubeIframeAPIReady() {
-    player = new YT.Player('videoPlayer', {
-        height: '100%',
-        width: '100%',
-        videoId: '',
-        playerVars: {
-            'autoplay': 1,
-            'controls': 1,
-            'rel': 0
-        }
-    });
-}
 
 // Extract YouTube video ID from URL
 function getYouTubeId(url) {
@@ -111,8 +93,7 @@ function searchMovies() {
 
 // Play movie
 function playMovie(movie) {
-    playerModal.style.display = 'block';
-    player.loadVideoById(movie.videoId);
+    window.location.href = `player.html?v=${movie.videoId}`;
 }
 
 // Upload functionality
@@ -138,7 +119,7 @@ async function handleUpload(event) {
         return;
     }
     
-    // In a real application, this would be saved to a database
+    // Create new movie object
     const newMovie = {
         id: movies.length + 1,
         title,
@@ -146,10 +127,56 @@ async function handleUpload(event) {
         videoId
     };
     
+    // Add to movies array
     movies.push(newMovie);
-    displayMovies();
-    uploadModal.style.display = 'none';
-    uploadForm.reset();
+    
+    // Create GitHub API request
+    const token = prompt('אנא הזן את ה-GitHub Personal Access Token שלך:');
+    if (!token) {
+        alert('לא ניתן להעלות סרט ללא טוקן GitHub');
+        return;
+    }
+
+    try {
+        // Get current content
+        const response = await fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/contents/script.js', {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+        
+        const data = await response.json();
+        const content = atob(data.content);
+        
+        // Update movies array in content
+        const updatedContent = content.replace(
+            /let movies = \[([\s\S]*?)\];/,
+            `let movies = ${JSON.stringify(movies, null, 4)};`
+        );
+        
+        // Update file on GitHub
+        await fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/contents/script.js', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify({
+                message: 'הוספת סרט חדש',
+                content: btoa(updatedContent),
+                sha: data.sha
+            })
+        });
+        
+        displayMovies();
+        uploadModal.style.display = 'none';
+        uploadForm.reset();
+        alert('הסרט הועלה בהצלחה!');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('אירעה שגיאה בהעלאת הסרט. אנא נסה שוב.');
+    }
 }
 
 // Event Listeners
@@ -168,22 +195,12 @@ uploadButton.addEventListener('click', () => {
 closeModal.forEach(closeBtn => {
     closeBtn.addEventListener('click', () => {
         uploadModal.style.display = 'none';
-        playerModal.style.display = 'none';
-        if (player) {
-            player.stopVideo();
-        }
     });
 });
 
 document.addEventListener('click', (e) => {
     if (e.target === uploadModal) {
         uploadModal.style.display = 'none';
-    }
-    if (e.target === playerModal) {
-        playerModal.style.display = 'none';
-        if (player) {
-            player.stopVideo();
-        }
     }
 });
 
