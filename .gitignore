@@ -1,0 +1,5 @@
+# Ignore config directory containing sensitive data
+/config/
+
+# But keep template files
+!/config/*.template.js 

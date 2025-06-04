@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         
-        if (username === ADMIN_CONFIG.username && password === ADMIN_CONFIG.password) {
+        const adminConfig = JSON.parse(localStorage.getItem('adminConfig'));
+        if (username === adminConfig.username && password === adminConfig.password) {
             isLoggedIn = true;
             localStorage.setItem('isLoggedIn', 'true');
             showMainPage();
