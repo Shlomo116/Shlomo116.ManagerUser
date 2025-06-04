@@ -5,44 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>סרטים כשרים</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <header>
         <nav>
-            <div class="logo"><a href="index.html">סרטים כשרים</a></div>
+            <div class="logo">
+                <a href="index.html">סרטים כשרים</a>
+            </div>
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="חיפוש סרטים...">
                 <button id="searchButton">חיפוש</button>
             </div>
             <div class="categories">
-                <select id="categorySelect">
-                    <option value="">כל הקטגוריות</option>
+                <select id="categoryFilter">
+                    <option value="all">כל הקטגוריות</option>
                     <option value="comedy">קומדיה</option>
                     <option value="drama">דרמה</option>
                     <option value="action">אקשן</option>
                     <option value="documentary">דוקומנטרי</option>
                 </select>
             </div>
-            <button id="uploadButton" class="upload-button">העלה סרט</button>
+            <button class="upload-button" id="uploadButton">
+                <i class="fas fa-plus"></i>
+                הוספת סרט
+            </button>
         </nav>
     </header>
 
     <main>
-        <div class="movies-grid" id="moviesGrid">
-            <!-- Movies will be dynamically added here -->
+        <div class="movies-grid">
+            <!-- Movies will be added here dynamically -->
         </div>
     </main>
 
+    <!-- Upload Modal -->
     <div id="uploadModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>העלאת סרט חדש</h2>
+            <h2>הוספת סרט חדש</h2>
             <form id="uploadForm">
                 <input type="password" id="adminPassword" placeholder="סיסמת מנהל" required>
                 <input type="text" id="movieTitle" placeholder="שם הסרט" required>
-                <input type="text" id="movieCategory" placeholder="קטגוריה" required>
-                <input type="url" id="movieUrl" placeholder="קישור לסרטון (YouTube או אחר)" required>
-                <button type="submit">העלה סרט</button>
+                <select id="movieCategory" required>
+                    <option value="">בחר קטגוריה</option>
+                    <option value="comedy">קומדיה</option>
+                    <option value="drama">דרמה</option>
+                    <option value="action">אקשן</option>
+                    <option value="documentary">דוקומנטרי</option>
+                </select>
+                <input type="text" id="movieUrl" placeholder="קישור ליוטיוב" required>
+                <button type="submit">הוסף סרט</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>עריכת סרט</h2>
+            <form id="editForm">
+                <input type="hidden" id="editMovieId">
+                <input type="password" id="editAdminPassword" placeholder="סיסמת מנהל" required>
+                <input type="text" id="editMovieTitle" placeholder="שם הסרט" required>
+                <select id="editMovieCategory" required>
+                    <option value="">בחר קטגוריה</option>
+                    <option value="comedy">קומדיה</option>
+                    <option value="drama">דרמה</option>
+                    <option value="action">אקשן</option>
+                    <option value="documentary">דוקומנטרי</option>
+                </select>
+                <div class="edit-buttons">
+                    <button type="submit">שמור שינויים</button>
+                    <button type="button" class="delete-button" onclick="deleteMovie(document.getElementById('editMovieId').value)">
+                        מחק סרט
+                    </button>
+                </div>
             </form>
         </div>
     </div>

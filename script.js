@@ -208,4 +208,164 @@ document.addEventListener('click', (e) => {
 });
 
 // Initial display
-displayMovies(); 
+displayMovies();
+
+// Load movies from localStorage on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const savedMovies = localStorage.getItem('movies');
+    if (savedMovies) {
+        movies = JSON.parse(savedMovies);
+    }
+    displayMovies();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const categorySelect = document.getElementById('categoryFilter');
+
+    if (searchButton) {
+        searchButton.addEventListener('click', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = categorySelect.value;
+            filterMovies(searchTerm, category);
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const searchTerm = searchInput.value.toLowerCase();
+                const category = categorySelect.value;
+                filterMovies(searchTerm, category);
+            }
+        });
+    }
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = categorySelect.value;
+            filterMovies(searchTerm, category);
+        });
+    }
+
+    // Modal functionality
+    const uploadModal = document.getElementById('uploadModal');
+    const editModal = document.getElementById('editModal');
+    const uploadButton = document.getElementById('uploadButton');
+    const closeButtons = document.querySelectorAll('.close');
+
+    if (uploadButton) {
+        uploadButton.addEventListener('click', () => {
+            uploadModal.style.display = 'block';
+        });
+    }
+
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            uploadModal.style.display = 'none';
+            editModal.style.display = 'none';
+        });
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === uploadModal) {
+            uploadModal.style.display = 'none';
+        }
+        if (e.target === editModal) {
+            editModal.style.display = 'none';
+        }
+    });
+
+    // Form submissions
+    const uploadForm = document.getElementById('uploadForm');
+    const editForm = document.getElementById('editForm');
+
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleUpload);
+    }
+
+    if (editForm) {
+        editForm.addEventListener('submit', handleEdit);
+    }
+}
+
+function filterMovies(searchTerm, category) {
+    const filteredMovies = movies.filter(movie => {
+        const matchesSearch = movie.title.toLowerCase().includes(searchTerm);
+        const matchesCategory = category === 'all' || movie.category === category;
+        return matchesSearch && matchesCategory;
+    });
+    displayMovies(filteredMovies);
+}
+
+function handleEdit(e) {
+    e.preventDefault();
+    const password = document.getElementById('editAdminPassword').value;
+    const title = document.getElementById('editMovieTitle').value;
+    const category = document.getElementById('editMovieCategory').value;
+    const videoId = document.getElementById('editMovieId').value;
+
+    if (password !== ADMIN_PASSWORD_HASH) {
+        alert('סיסמה שגויה');
+        return;
+    }
+
+    const movieIndex = movies.findIndex(m => m.videoId === videoId);
+    if (movieIndex === -1) {
+        alert('הסרט לא נמצא');
+        return;
+    }
+
+    movies[movieIndex] = {
+        ...movies[movieIndex],
+        title,
+        category
+    };
+
+    saveMovies();
+    displayMovies();
+
+    // Reset form and close modal
+    e.target.reset();
+    document.getElementById('editModal').style.display = 'none';
+}
+
+function editMovie(videoId) {
+    const movie = movies.find(m => m.videoId === videoId);
+    if (!movie) return;
+
+    document.getElementById('editMovieId').value = videoId;
+    document.getElementById('editMovieTitle').value = movie.title;
+    document.getElementById('editMovieCategory').value = movie.category;
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function deleteMovie(videoId) {
+    if (!confirm('האם אתה בטוח שברצונך למחוק את הסרט?')) {
+        return;
+    }
+
+    const password = prompt('הזן סיסמת מנהל:');
+    if (password !== ADMIN_PASSWORD_HASH) {
+        alert('סיסמה שגויה');
+        return;
+    }
+
+    movies = movies.filter(m => m.videoId !== videoId);
+    saveMovies();
+    displayMovies();
+}
+
+function extractVideoId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+function saveMovies() {
+    localStorage.setItem('movies', JSON.stringify(movies));
+} 

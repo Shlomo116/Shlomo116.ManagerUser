@@ -5,50 +5,171 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>צפייה בסרט - סרטים כשרים</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: black;
+            background: #f9f9f9;
         }
         .player-container {
-            width: 100vw;
-            height: 100vh;
             display: flex;
             flex-direction: column;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        @media (min-width: 1200px) {
+            .player-container {
+                flex-direction: row;
+                gap: 20px;
+            }
+        }
+        .video-section {
+            flex: 1;
+            min-width: 0;
+        }
+        .sidebar {
+            width: 100%;
+            max-width: 400px;
+        }
+        @media (min-width: 1200px) {
+            .sidebar {
+                width: 400px;
+            }
         }
         .player-header {
-            background: rgba(0, 0, 0, 0.8);
+            background: white;
             padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .player-header a {
-            color: white;
+            color: #333;
             text-decoration: none;
             font-size: 1.5rem;
             font-weight: bold;
         }
         #videoPlayer {
-            flex: 1;
             width: 100%;
+            aspect-ratio: 16/9;
+            background: black;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .video-info {
+            background: white;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .video-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .video-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .action-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            background: #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .action-button:hover {
+            background: #e0e0e0;
+        }
+        .action-button.active {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .related-videos {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .related-videos h3 {
+            margin-bottom: 1rem;
+        }
+        .related-video {
+            display: flex;
+            gap: 1rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .related-video:hover {
+            background: #f0f0f0;
+        }
+        .related-video img {
+            width: 120px;
+            height: 68px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .related-video-info {
+            flex: 1;
+        }
+        .related-video-title {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        .related-video-category {
+            color: #666;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="player-container">
-        <div class="player-header">
-            <a href="index.html">סרטים כשרים</a>
+        <div class="video-section">
+            <div class="player-header">
+                <a href="index.html">סרטים כשרים</a>
+            </div>
+            <div id="videoPlayer"></div>
+            <div class="video-info">
+                <div class="video-title" id="videoTitle"></div>
+                <div class="video-actions">
+                    <button class="action-button" id="likeButton">
+                        <i class="fas fa-thumbs-up"></i>
+                        <span>אהבתי</span>
+                    </button>
+                    <button class="action-button" id="dislikeButton">
+                        <i class="fas fa-thumbs-down"></i>
+                        <span>לא אהבתי</span>
+                    </button>
+                </div>
+            </div>
         </div>
-        <div id="videoPlayer"></div>
+        <div class="sidebar">
+            <div class="related-videos">
+                <h3>סרטים נוספים</h3>
+                <div id="relatedVideos">
+                    <!-- Related videos will be added here -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="script.js"></script>
     <script>
         let player;
         const urlParams = new URLSearchParams(window.location.search);
         const videoId = urlParams.get('v');
+        let currentMovie;
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('videoPlayer', {
@@ -62,6 +183,66 @@
                 }
             });
         }
+
+        // Load movie data and related videos
+        async function loadMovieData() {
+            const response = await fetch('script.js');
+            const content = await response.text();
+            const moviesMatch = content.match(/let movies = (\[[\s\S]*?\]);/);
+            if (moviesMatch) {
+                const movies = JSON.parse(moviesMatch[1]);
+                currentMovie = movies.find(m => m.videoId === videoId);
+                if (currentMovie) {
+                    document.getElementById('videoTitle').textContent = currentMovie.title;
+                    
+                    // Load related videos
+                    const relatedVideos = movies
+                        .filter(m => m.videoId !== videoId)
+                        .slice(0, 5);
+                    
+                    const relatedVideosContainer = document.getElementById('relatedVideos');
+                    relatedVideosContainer.innerHTML = relatedVideos.map(movie => `
+                        <div class="related-video" onclick="playRelatedVideo('${movie.videoId}')">
+                            <img src="https://img.youtube.com/vi/${movie.videoId}/mqdefault.jpg" 
+                                 alt="${movie.title}"
+                                 onerror="this.src='https://img.youtube.com/vi/${movie.videoId}/hqdefault.jpg'">
+                            <div class="related-video-info">
+                                <div class="related-video-title">${movie.title}</div>
+                                <div class="related-video-category">${getCategoryName(movie.category)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        function playRelatedVideo(newVideoId) {
+            window.location.href = `player.html?v=${newVideoId}`;
+        }
+
+        function getCategoryName(category) {
+            const categories = {
+                'comedy': 'קומדיה',
+                'drama': 'דרמה',
+                'action': 'אקשן',
+                'documentary': 'דוקומנטרי'
+            };
+            return categories[category] || category;
+        }
+
+        // Like/Dislike functionality
+        document.getElementById('likeButton').addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.getElementById('dislikeButton').classList.remove('active');
+        });
+
+        document.getElementById('dislikeButton').addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.getElementById('likeButton').classList.remove('active');
+        });
+
+        // Load movie data when page loads
+        loadMovieData();
     </script>
 </body>
 </html> 
