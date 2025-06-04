@@ -6,16 +6,16 @@ const ADMIN_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa82
 // Sample movies data - in a real application, this would come from a database
 let movies = [
     {
-        "id": 1,
-        "title": "סרט לדוגמה 1",
-        "category": "comedy",
-        "videoId": "ZQmGPEh4yaU"
+        id: 1,
+        title: 'סרט לדוגמה 1',
+        category: 'comedy',
+        videoId: 'ZQmGPEh4yaU'
     },
     {
-        "id": 2,
-        "title": "סרט לדוגמה 2",
-        "category": "drama",
-        "videoId": "FU2gJooc41E"
+        id: 2,
+        title: 'סרט לדוגמה 2',
+        category: 'drama',
+        videoId: 'FU2gJooc41E'
     },
     {
         "id": 3,
@@ -53,44 +53,66 @@ async function sha256(message) {
 
 // Display movies
 function displayMovies(moviesToShow = movies) {
-    moviesGrid.innerHTML = '';
-    moviesToShow.forEach(movie => {
-        const movieCard = document.createElement('div');
-        movieCard.className = 'movie-card';
-        movieCard.innerHTML = `
+    const moviesGrid = document.querySelector('.movies-grid');
+    if (!moviesGrid) return;
+
+    moviesGrid.innerHTML = moviesToShow.map(movie => `
+        <div class="movie-card">
             <img src="https://img.youtube.com/vi/${movie.videoId}/maxresdefault.jpg" 
                  alt="${movie.title}" 
                  class="movie-thumbnail"
                  onerror="this.src='https://img.youtube.com/vi/${movie.videoId}/hqdefault.jpg'">
+            <div class="movie-actions">
+                <button class="movie-action-button" onclick="editMovie('${movie.videoId}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="movie-action-button" onclick="deleteMovie('${movie.videoId}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
             <div class="movie-info">
                 <h3 class="movie-title">${movie.title}</h3>
                 <p class="movie-category">${getCategoryName(movie.category)}</p>
             </div>
-        `;
-        movieCard.addEventListener('click', () => playMovie(movie));
-        moviesGrid.appendChild(movieCard);
+        </div>
+    `).join('');
+
+    // Add click event to movie cards
+    document.querySelectorAll('.movie-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // Don't navigate if clicking on action buttons
+            if (e.target.closest('.movie-actions')) {
+                return;
+            }
+            const videoId = card.querySelector('img').src.split('/vi/')[1].split('/')[0];
+            window.location.href = `player.html?v=${videoId}`;
+        });
     });
 }
 
 // Get category name in Hebrew
 function getCategoryName(category) {
     const categories = {
-        'comedy': 'ÃÂ§ÃÂÃÂÃÂÃÂÃÂ',
-        'drama': 'ÃÂÃÂ¨ÃÂÃÂ',
-        'action': 'ÃÂÃÂ§ÃÂ©ÃÂ',
-        'documentary': 'ÃÂÃÂÃÂ§ÃÂÃÂÃÂ ÃÂÃÂ¨ÃÂ'
+        'comedy': 'קומדיה',
+        'drama': 'דרמה',
+        'action': 'אקשן',
+        'documentary': 'דוקומנטרי'
     };
     return categories[category] || category;
 }
 
 // Search functionality
 function searchMovies() {
+    const searchInput = document.getElementById('searchInput');
+    const categorySelect = document.getElementById('categoryFilter');
+    if (!searchInput || !categorySelect) return;
+
     const searchTerm = searchInput.value.toLowerCase();
     const selectedCategory = categorySelect.value;
     
     const filteredMovies = movies.filter(movie => {
         const matchesSearch = movie.title.toLowerCase().includes(searchTerm);
-        const matchesCategory = !selectedCategory || movie.category === selectedCategory;
+        const matchesCategory = selectedCategory === 'all' || movie.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
     
@@ -114,14 +136,14 @@ async function handleUpload(event) {
     // Hash the password and compare with stored hash
     const passwordHash = await sha256(password);
     if (passwordHash !== ADMIN_PASSWORD_HASH) {
-        alert('ÃÂ¡ÃÂÃÂ¡ÃÂÃÂ ÃÂ©ÃÂÃÂÃÂÃÂ');
+        alert('סיסמה שגויה');
         return;
     }
     
     // Extract YouTube video ID
     const videoId = getYouTubeId(videoUrl);
     if (!videoId) {
-        alert('ÃÂ§ÃÂÃÂ©ÃÂÃÂ¨ ÃÂÃÂ ÃÂÃÂÃÂ§ÃÂ. ÃÂÃÂ ÃÂ ÃÂÃÂÃÂ ÃÂ§ÃÂÃÂ©ÃÂÃÂ¨ YouTube ÃÂªÃÂ§ÃÂÃÂ');
+        alert('קישור לא חוקי. אנא הזן קישור YouTube תקין');
         return;
     }
     
@@ -135,177 +157,13 @@ async function handleUpload(event) {
     
     // Add to movies array
     movies.push(newMovie);
-    
-    // Create GitHub API request
-    const token = prompt('ÃÂÃÂ ÃÂ ÃÂÃÂÃÂ ÃÂÃÂª ÃÂ-GitHub Personal Access Token ÃÂ©ÃÂÃÂ:');
-    if (!token) {
-        alert('ÃÂÃÂ ÃÂ ÃÂÃÂªÃÂ ÃÂÃÂÃÂ¢ÃÂÃÂÃÂª ÃÂ¡ÃÂ¨ÃÂ ÃÂÃÂÃÂ ÃÂÃÂÃÂ§ÃÂ GitHub');
-        return;
-    }
-
-    try {
-        // Get current content
-        const response = await fetch('https://api.github.com/repos/Shlomo116/Shlomo116.ManagerUser/contents/script.js', {
-            headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-        
-        const data = await response.json();
-        const content = atob(data.content);
-        
-        // Update movies array in content
-        const updatedContent = content.replace(
-            /let movies = \[([\s\S]*?)\];/,
-            `let movies = ${JSON.stringify(movies, null, 4)};`
-        );
-        
-        // Encode content to base64 safely
-        const encodedContent = btoa(unescape(encodeURIComponent(updatedContent)));
-        
-        // Update file on GitHub
-        await fetch('https://api.github.com/repos/Shlomo116/Shlomo116.ManagerUser/contents/script.js', {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            },
-            body: JSON.stringify({
-                message: 'ÃÂÃÂÃÂ¡ÃÂ¤ÃÂª ÃÂ¡ÃÂ¨ÃÂ ÃÂÃÂÃÂ©',
-                content: encodedContent,
-                sha: data.sha
-            })
-        });
-        
-        displayMovies();
-        uploadModal.style.display = 'none';
-        uploadForm.reset();
-        alert('ÃÂÃÂ¡ÃÂ¨ÃÂ ÃÂÃÂÃÂ¢ÃÂÃÂ ÃÂÃÂÃÂ¦ÃÂÃÂÃÂ!');
-    } catch (error) {
-        console.error('Error:', error);
-        alert('ÃÂÃÂÃÂ¨ÃÂ¢ÃÂ ÃÂ©ÃÂÃÂÃÂÃÂ ÃÂÃÂÃÂ¢ÃÂÃÂÃÂª ÃÂÃÂ¡ÃÂ¨ÃÂ. ÃÂÃÂ ÃÂ ÃÂ ÃÂ¡ÃÂ ÃÂ©ÃÂÃÂ.');
-    }
-}
-
-// Event Listeners
-searchButton.addEventListener('click', searchMovies);
-searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') searchMovies();
-});
-categorySelect.addEventListener('change', searchMovies);
-uploadForm.addEventListener('submit', handleUpload);
-
-// Modal functionality
-uploadButton.addEventListener('click', () => {
-    uploadModal.style.display = 'block';
-});
-
-closeModal.forEach(closeBtn => {
-    closeBtn.addEventListener('click', () => {
-        uploadModal.style.display = 'none';
-    });
-});
-
-document.addEventListener('click', (e) => {
-    if (e.target === uploadModal) {
-        uploadModal.style.display = 'none';
-    }
-});
-
-// Initial display
-displayMovies();
-
-// Load movies from localStorage on page load
-document.addEventListener('DOMContentLoaded', () => {
-    const savedMovies = localStorage.getItem('movies');
-    if (savedMovies) {
-        movies = JSON.parse(savedMovies);
-    }
+    saveMovies();
     displayMovies();
-    setupEventListeners();
-});
-
-function setupEventListeners() {
-    // Search functionality
-    const searchInput = document.getElementById('searchInput');
-    const searchButton = document.getElementById('searchButton');
-    const categorySelect = document.getElementById('categoryFilter');
-
-    if (searchButton) {
-        searchButton.addEventListener('click', () => {
-            const searchTerm = searchInput.value.toLowerCase();
-            const category = categorySelect.value;
-            filterMovies(searchTerm, category);
-        });
-    }
-
-    if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const searchTerm = searchInput.value.toLowerCase();
-                const category = categorySelect.value;
-                filterMovies(searchTerm, category);
-            }
-        });
-    }
-
-    if (categorySelect) {
-        categorySelect.addEventListener('change', () => {
-            const searchTerm = searchInput.value.toLowerCase();
-            const category = categorySelect.value;
-            filterMovies(searchTerm, category);
-        });
-    }
-
-    // Modal functionality
-    const uploadModal = document.getElementById('uploadModal');
-    const editModal = document.getElementById('editModal');
-    const uploadButton = document.getElementById('uploadButton');
-    const closeButtons = document.querySelectorAll('.close');
-
-    if (uploadButton) {
-        uploadButton.addEventListener('click', () => {
-            uploadModal.style.display = 'block';
-        });
-    }
-
-    closeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            uploadModal.style.display = 'none';
-            editModal.style.display = 'none';
-        });
-    });
-
-    window.addEventListener('click', (e) => {
-        if (e.target === uploadModal) {
-            uploadModal.style.display = 'none';
-        }
-        if (e.target === editModal) {
-            editModal.style.display = 'none';
-        }
-    });
-
-    // Form submissions
-    const uploadForm = document.getElementById('uploadForm');
-    const editForm = document.getElementById('editForm');
-
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', handleUpload);
-    }
-
-    if (editForm) {
-        editForm.addEventListener('submit', handleEdit);
-    }
-}
-
-function filterMovies(searchTerm, category) {
-    const filteredMovies = movies.filter(movie => {
-        const matchesSearch = movie.title.toLowerCase().includes(searchTerm);
-        const matchesCategory = category === 'all' || movie.category === category;
-        return matchesSearch && matchesCategory;
-    });
-    displayMovies(filteredMovies);
+    
+    // Reset form and close modal
+    event.target.reset();
+    document.getElementById('uploadModal').style.display = 'none';
+    alert('הסרט הועלה בהצלחה!');
 }
 
 function handleEdit(e) {
@@ -366,12 +224,73 @@ function deleteMovie(videoId) {
     displayMovies();
 }
 
-function extractVideoId(url) {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-}
-
 function saveMovies() {
     localStorage.setItem('movies', JSON.stringify(movies));
-} 
+}
+
+// Initialize everything when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Load movies from localStorage
+    const savedMovies = localStorage.getItem('movies');
+    if (savedMovies) {
+        movies = JSON.parse(savedMovies);
+    }
+
+    // Setup event listeners
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const categorySelect = document.getElementById('categoryFilter');
+    const uploadModal = document.getElementById('uploadModal');
+    const editModal = document.getElementById('editModal');
+    const uploadButton = document.getElementById('uploadButton');
+    const closeButtons = document.querySelectorAll('.close');
+    const uploadForm = document.getElementById('uploadForm');
+    const editForm = document.getElementById('editForm');
+
+    if (searchButton) {
+        searchButton.addEventListener('click', searchMovies);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchMovies();
+        });
+    }
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', searchMovies);
+    }
+
+    if (uploadButton) {
+        uploadButton.addEventListener('click', () => {
+            uploadModal.style.display = 'block';
+        });
+    }
+
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            uploadModal.style.display = 'none';
+            editModal.style.display = 'none';
+        });
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === uploadModal) {
+            uploadModal.style.display = 'none';
+        }
+        if (e.target === editModal) {
+            editModal.style.display = 'none';
+        }
+    });
+
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleUpload);
+    }
+
+    if (editForm) {
+        editForm.addEventListener('submit', handleEdit);
+    }
+
+    // Initial display
+    displayMovies();
+}); 
