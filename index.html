@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סרטים כשרים</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">סרטים כשרים</div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="חיפוש סרטים...">
+                <button id="searchButton">חיפוש</button>
+            </div>
+            <div class="categories">
+                <select id="categorySelect">
+                    <option value="">כל הקטגוריות</option>
+                    <option value="comedy">קומדיה</option>
+                    <option value="drama">דרמה</option>
+                    <option value="action">אקשן</option>
+                    <option value="documentary">דוקומנטרי</option>
+                </select>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="movies-grid" id="moviesGrid">
+            <!-- Movies will be dynamically added here -->
+        </div>
+    </main>
+
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>העלאת סרט חדש</h2>
+            <form id="uploadForm">
+                <input type="password" id="adminPassword" placeholder="סיסמת מנהל" required>
+                <input type="text" id="movieTitle" placeholder="שם הסרט" required>
+                <input type="text" id="movieCategory" placeholder="קטגוריה" required>
+                <input type="file" id="movieFile" accept="video/*" required>
+                <button type="submit">העלה סרט</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
