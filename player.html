@@ -4,61 +4,120 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>נגן סרטים</title>
-    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            box-sizing: border-box;
+            font-family: 'Rubik', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
             min-height: 100vh;
-            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .close-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .close-button:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
         }
 
         .player-container {
-            position: relative;
-            width: 100%;
-            max-width: 1280px;
-            margin: 0 auto;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            margin-top: 2rem;
         }
 
         #player {
             width: 100%;
             aspect-ratio: 16/9;
-        }
-
-        .close-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            z-index: 1000;
-        }
-
-        .close-button:hover {
-            background: rgba(0, 0, 0, 0.9);
+            border-radius: var(--border-radius);
+            overflow: hidden;
         }
 
         @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
             .player-container {
-                width: 100%;
-                height: auto;
+                padding: 1rem;
             }
         }
     </style>
 </head>
 <body>
-    <button class="close-button" onclick="window.location.href='index.html'">חזרה לדף הבית</button>
-    <div class="player-container">
-        <div id="player"></div>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">סרטים כשרים</a>
+            <a href="index.html" class="close-button">חזרה לדף הבית</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="player-container">
+            <div id="player"></div>
+        </div>
     </div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -66,12 +125,11 @@
         let player;
         const videoId = new URLSearchParams(window.location.search).get('v');
 
-        function onYouTubeIframeAPIReady() {
-            if (!videoId) {
-                window.location.href = 'index.html';
-                return;
-            }
+        if (!videoId) {
+            window.location.href = 'index.html';
+        }
 
+        function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
@@ -80,9 +138,7 @@
                     'autoplay': 1,
                     'controls': 1,
                     'rel': 0,
-                    'showinfo': 0,
-                    'modestbranding': 1,
-                    'fs': 1
+                    'modestbranding': 1
                 },
                 events: {
                     'onStateChange': onPlayerStateChange
@@ -96,9 +152,9 @@
             }
         }
 
-        // Add keyboard shortcut to exit
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
+        // Add keyboard shortcut for closing
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
                 window.location.href = 'index.html';
             }
         });
