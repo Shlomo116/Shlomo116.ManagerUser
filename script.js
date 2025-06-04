@@ -2,54 +2,29 @@
 const GITHUB_REPO = 'Shlomo116/Shlomo116.ManagerUser';
 const GITHUB_PATH = 'movies.json';
 
-// Load movies from localStorage
-function loadMoviesFromStorage() {
-    const savedMovies = localStorage.getItem('movies');
-    return savedMovies ? JSON.parse(savedMovies) : [];
-}
-
-// Save movies to localStorage
-function saveMoviesToStorage(movies) {
-    localStorage.setItem('movies', JSON.stringify(movies));
-}
-
-// Verify GitHub repository and token
-async function verifyGitHubAccess(token) {
-    try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`, {
-            headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-
-        if (response.ok) {
-            return true;
-        } else if (response.status === 404) {
-            alert('המאגר לא נמצא. אנא וודא שהמאגר קיים ושהטוקן תקין.');
-            return false;
-        } else {
-            const errorData = await response.json();
-            alert(`שגיאה בגישה למאגר: ${errorData.message}`);
-            return false;
-        }
-    } catch (error) {
-        console.error('Error verifying GitHub access:', error);
-        alert('שגיאה בגישה למאגר');
-        return false;
+// Sample movies data - will be migrated to GitHub
+const defaultMovies = [
+    {
+        id: 1,
+        title: 'סרט לדוגמה 1',
+        category: 'comedy',
+        videoId: 'ZQmGPEh4yaU'
+    },
+    {
+        id: 2,
+        title: 'סרט לדוגמה 2',
+        category: 'drama',
+        videoId: 'FU2gJooc41E'
     }
-}
+];
+
+// Initialize movies array
+let movies = [];
 
 // Load movies from GitHub
 async function loadMoviesFromGitHub(token) {
     if (!token) {
         console.error('לא הוזן טוקן');
-        return null;
-    }
-
-    // First verify repository access
-    const hasAccess = await verifyGitHubAccess(token);
-    if (!hasAccess) {
         return null;
     }
 
@@ -66,9 +41,10 @@ async function loadMoviesFromGitHub(token) {
             const content = decodeURIComponent(escape(atob(data.content)));
             return JSON.parse(content);
         } else if (response.status === 404) {
-            // If file doesn't exist, create it with empty array
-            const success = await saveMoviesToGitHub([], token);
-            return success ? [] : null;
+            // If file doesn't exist, create it with default movies
+            console.log('Creating new movies.json file with default movies...');
+            const success = await saveMoviesToGitHub(defaultMovies, token);
+            return success ? defaultMovies : null;
         } else {
             const errorData = await response.json();
             console.error('GitHub API Error:', errorData);
@@ -86,12 +62,6 @@ async function loadMoviesFromGitHub(token) {
 async function saveMoviesToGitHub(movies, token) {
     if (!token) {
         console.error('לא הוזן טוקן');
-        return false;
-    }
-
-    // First verify repository access
-    const hasAccess = await verifyGitHubAccess(token);
-    if (!hasAccess) {
         return false;
     }
 
@@ -151,22 +121,6 @@ const ADMIN_PASSWORD = 'admin123';
 function verifyAdminPassword(password) {
     return password === ADMIN_PASSWORD;
 }
-
-// Sample movies data
-let movies = [
-    {
-        id: 1,
-        title: 'סרט לדוגמה 1',
-        category: 'comedy',
-        videoId: 'ZQmGPEh4yaU'
-    },
-    {
-        id: 2,
-        title: 'סרט לדוגמה 2',
-        category: 'drama',
-        videoId: 'FU2gJooc41E'
-    }
-];
 
 // DOM Elements
 const moviesGrid = document.getElementById('moviesGrid');
@@ -282,6 +236,13 @@ async function handleUpload(event) {
     }
 
     try {
+        // First, load current movies from GitHub
+        const currentMovies = await loadMoviesFromGitHub(token);
+        if (!currentMovies) {
+            alert('שגיאה בטעינת רשימת הסרטים');
+            return;
+        }
+
         const newMovie = {
             id: Date.now().toString(),
             title,
@@ -289,14 +250,15 @@ async function handleUpload(event) {
             videoId
         };
         
-        movies.push(newMovie);
-        saveMoviesToStorage(movies);
+        const updatedMovies = [...currentMovies, newMovie];
+        const success = await saveMoviesToGitHub(updatedMovies, token);
         
-        const success = await saveMoviesToGitHub(movies, token);
         if (success) {
-            displayMovies(movies);
+            movies = updatedMovies;
+            displayMovies(updatedMovies);
             document.getElementById('uploadModal').style.display = 'none';
             document.getElementById('uploadForm').reset();
+            alert('הסרט נוסף בהצלחה');
         } else {
             alert('שגיאה בשמירת הסרט בגיט האב');
         }
@@ -462,10 +424,10 @@ async function handleDelete(event) {
         
         if (success) {
             movies = updatedMovies;
-            saveMoviesToStorage(updatedMovies);
             displayMovies(updatedMovies);
             document.getElementById('deleteModal').style.display = 'none';
             document.getElementById('deleteForm').reset();
+            alert('הסרט נמחק בהצלחה');
         } else {
             alert('שגיאה במחיקת הסרט מגיט האב');
         }
@@ -508,26 +470,35 @@ async function handleEdit(event) {
     }
 
     try {
-        const movieIndex = movies.findIndex(m => m.id === movieId);
+        // First, load current movies from GitHub
+        const currentMovies = await loadMoviesFromGitHub(token);
+        if (!currentMovies) {
+            alert('שגיאה בטעינת רשימת הסרטים');
+            return;
+        }
+
+        const movieIndex = currentMovies.findIndex(m => m.id === movieId);
         if (movieIndex === -1) {
             alert('סרט לא נמצא');
             return;
         }
 
-        movies[movieIndex] = {
-            ...movies[movieIndex],
+        const updatedMovies = [...currentMovies];
+        updatedMovies[movieIndex] = {
+            ...updatedMovies[movieIndex],
             title,
             category,
             videoId
         };
 
-        saveMoviesToStorage(movies);
-        const success = await saveMoviesToGitHub(movies, token);
+        const success = await saveMoviesToGitHub(updatedMovies, token);
         
         if (success) {
-            displayMovies(movies);
+            movies = updatedMovies;
+            displayMovies(updatedMovies);
             document.getElementById('editModal').style.display = 'none';
             document.getElementById('editForm').reset();
+            alert('הסרט עודכן בהצלחה');
         } else {
             alert('שגיאה בשמירת השינויים בגיט האב');
         }
@@ -538,13 +509,21 @@ async function handleEdit(event) {
 }
 
 // Initialize the page
-document.addEventListener('DOMContentLoaded', () => {
-    // Load movies from localStorage or use default
-    const savedMovies = localStorage.getItem('movies');
-    if (savedMovies) {
-        movies = JSON.parse(savedMovies);
+document.addEventListener('DOMContentLoaded', async () => {
+    // Load movies from GitHub
+    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    if (token) {
+        const loadedMovies = await loadMoviesFromGitHub(token);
+        if (loadedMovies) {
+            movies = loadedMovies;
+            displayMovies(movies);
+        } else {
+            alert('שגיאה בטעינת רשימת הסרטים');
+        }
+    } else {
+        alert('לא הוזן טוקן, לא ניתן לטעון את רשימת הסרטים');
     }
-    displayMovies(movies);
+    
     setupEventListeners();
 });
 
