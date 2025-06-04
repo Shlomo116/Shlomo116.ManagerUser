@@ -282,21 +282,29 @@
         // Display related movies
         async function displayRelatedMovies() {
             const movies = await loadMoviesFromGitHub();
-            // Find the current movie by matching videoId from url or videoId field
-            currentMovie = movies.find(movie => {
+            // סינון סרטים עם videoId תקני בלבד
+            const validMovies = movies.filter(movie => {
+                const vid = extractVideoId(movie.url) || movie.videoId;
+                return vid && /^[a-zA-Z0-9_-]{11}$/.test(vid);
+            });
+
+            // מציאת הסרט הנוכחי
+            currentMovie = validMovies.find(movie => {
                 const movieVideoId = extractVideoId(movie.url) || movie.videoId;
                 return movieVideoId === videoId;
             });
+
             if (!currentMovie) {
-                // If not found, just show the player and empty related list
                 console.warn('Movie not found in DB, showing player only:', videoId);
                 document.getElementById('relatedMovies').innerHTML = '<div style="text-align:center;color:#888;">לא נמצאו סרטים קשורים</div>';
                 return;
             }
-            const relatedMovies = movies.filter(movie => {
+
+            const relatedMovies = validMovies.filter(movie => {
                 const movieVideoId = extractVideoId(movie.url) || movie.videoId;
                 return movie.category === currentMovie.category && movieVideoId !== videoId;
             });
+
             const relatedMoviesContainer = document.getElementById('relatedMovies');
             if (relatedMovies.length === 0) {
                 relatedMoviesContainer.innerHTML = '<div style="text-align:center;color:#888;">לא נמצאו סרטים קשורים</div>';
