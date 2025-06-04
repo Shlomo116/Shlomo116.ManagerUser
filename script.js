@@ -1,3 +1,185 @@
+// GitHub API configuration
+const GITHUB_TOKEN = 'ghp_2QYwQYwQYwQYwQYwQYwQYwQYwQYwQYwQYwQ';
+const GITHUB_REPO = 'shlomodavid/kosher-movies';
+const GITHUB_PATH = 'movies.json';
+
+// Load movies from GitHub
+async function loadMovies() {
+    try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const content = atob(data.content);
+            return JSON.parse(content);
+        } else {
+            console.error('Failed to load movies from GitHub');
+            return [];
+        }
+    } catch (error) {
+        console.error('Error loading movies:', error);
+        return [];
+    }
+}
+
+// Save movies to GitHub
+async function saveMovies(movies) {
+    try {
+        const content = btoa(JSON.stringify(movies, null, 2));
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: 'Update movies list',
+                content: content,
+                sha: await getFileSha()
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to save movies to GitHub');
+        }
+    } catch (error) {
+        console.error('Error saving movies:', error);
+        throw error;
+    }
+}
+
+// Get file SHA for GitHub update
+async function getFileSha() {
+    try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_PATH}`, {
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            return data.sha;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting file SHA:', error);
+        return null;
+    }
+}
+
+// Admin password verification
+const ADMIN_PASSWORD = 'admin123';
+
+function verifyAdminPassword(password) {
+    return password === ADMIN_PASSWORD;
+}
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const movies = await loadMovies();
+        displayMovies(movies);
+        setupEventListeners();
+    } catch (error) {
+        console.error('Error initializing page:', error);
+    }
+});
+
+function setupEventListeners() {
+    // Admin button
+    const adminButton = document.getElementById('adminButton');
+    const adminToolsModal = document.getElementById('adminToolsModal');
+    const closeAdminTools = document.getElementById('closeAdminTools');
+
+    if (adminButton && adminToolsModal && closeAdminTools) {
+        adminButton.addEventListener('click', () => {
+            adminToolsModal.style.display = 'block';
+        });
+
+        closeAdminTools.addEventListener('click', () => {
+            adminToolsModal.style.display = 'none';
+        });
+    }
+
+    // Tool buttons
+    const addMovieBtn = document.getElementById('addMovieBtn');
+    const editMovieBtn = document.getElementById('editMovieBtn');
+    const deleteMovieBtn = document.getElementById('deleteMovieBtn');
+
+    if (addMovieBtn) {
+        addMovieBtn.addEventListener('click', () => {
+            adminToolsModal.style.display = 'none';
+            document.getElementById('uploadModal').style.display = 'block';
+        });
+    }
+
+    if (editMovieBtn) {
+        editMovieBtn.addEventListener('click', () => {
+            adminToolsModal.style.display = 'none';
+            document.getElementById('editModal').style.display = 'block';
+        });
+    }
+
+    if (deleteMovieBtn) {
+        deleteMovieBtn.addEventListener('click', () => {
+            adminToolsModal.style.display = 'none';
+            document.getElementById('deleteModal').style.display = 'block';
+        });
+    }
+
+    // Close buttons for all modals
+    const closeButtons = document.querySelectorAll('.close');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            button.closest('.modal').style.display = 'none';
+        });
+    });
+
+    // Cancel buttons
+    const cancelButtons = document.querySelectorAll('.cancel-button');
+    cancelButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            button.closest('.modal').style.display = 'none';
+        });
+    });
+
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', filterMovies);
+    }
+
+    // Category filter
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', filterMovies);
+    }
+
+    // Form submissions
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleUpload);
+    }
+
+    const editForm = document.getElementById('editForm');
+    if (editForm) {
+        editForm.addEventListener('submit', handleEdit);
+    }
+
+    const deleteForm = document.getElementById('deleteForm');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', handleDelete);
+    }
+}
+
 // Admin password hash - this is a simple hash for demonstration
 // In a real application, you would use a proper backend with secure password storage
 // The password is 'admin123' - you can change it by updating this hash
@@ -128,74 +310,89 @@ function playMovie(movie) {
 async function handleUpload(event) {
     event.preventDefault();
     
-    const password = document.getElementById('adminPassword').value;
+    const password = document.getElementById('uploadPassword').value;
+    if (!verifyAdminPassword(password)) {
+        alert('סיסמה שגויה');
+        return;
+    }
+
     const title = document.getElementById('movieTitle').value;
     const category = document.getElementById('movieCategory').value;
-    const videoUrl = document.getElementById('movieUrl').value;
+    const url = document.getElementById('movieUrl').value;
     
-    // Hash the password and compare with stored hash
-    const passwordHash = await sha256(password);
-    if (passwordHash !== ADMIN_PASSWORD_HASH) {
-        alert('סיסמה שגויה');
-        return;
-    }
-    
-    // Extract YouTube video ID
-    const videoId = getYouTubeId(videoUrl);
+    const videoId = extractVideoId(url);
     if (!videoId) {
-        alert('קישור לא חוקי. אנא הזן קישור YouTube תקין');
+        alert('כתובת יוטיוב לא תקינה');
         return;
     }
-    
-    // Create new movie object
-    const newMovie = {
-        id: movies.length + 1,
-        title,
-        category,
-        videoId
-    };
-    
-    // Add to movies array
-    movies.push(newMovie);
-    saveMovies();
-    displayMovies();
-    
-    // Reset form and close modal
-    event.target.reset();
-    document.getElementById('uploadModal').style.display = 'none';
-    alert('הסרט הועלה בהצלחה!');
+
+    try {
+        const movies = await loadMovies();
+        const newMovie = {
+            id: Date.now().toString(),
+            title,
+            category,
+            videoId,
+            likes: 0,
+            dislikes: 0
+        };
+        
+        movies.push(newMovie);
+        await saveMovies(movies);
+        
+        displayMovies(movies);
+        document.getElementById('uploadModal').style.display = 'none';
+        document.getElementById('uploadForm').reset();
+    } catch (error) {
+        console.error('Error uploading movie:', error);
+        alert('שגיאה בהעלאת הסרט');
+    }
 }
 
-function handleEdit(e) {
-    e.preventDefault();
-    const password = document.getElementById('editAdminPassword').value;
-    const title = document.getElementById('editMovieTitle').value;
-    const category = document.getElementById('editMovieCategory').value;
-    const videoId = document.getElementById('editMovieId').value;
-
-    if (password !== ADMIN_PASSWORD_HASH) {
+async function handleEdit(event) {
+    event.preventDefault();
+    
+    const password = document.getElementById('editPassword').value;
+    if (!verifyAdminPassword(password)) {
         alert('סיסמה שגויה');
         return;
     }
 
-    const movieIndex = movies.findIndex(m => m.videoId === videoId);
-    if (movieIndex === -1) {
-        alert('הסרט לא נמצא');
+    const movieId = document.getElementById('editMovieId').value;
+    const title = document.getElementById('editMovieTitle').value;
+    const category = document.getElementById('editMovieCategory').value;
+    const url = document.getElementById('editMovieUrl').value;
+    
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+        alert('כתובת יוטיוב לא תקינה');
         return;
     }
 
-    movies[movieIndex] = {
-        ...movies[movieIndex],
-        title,
-        category
-    };
+    try {
+        const movies = await loadMovies();
+        const movieIndex = movies.findIndex(m => m.id === movieId);
+        
+        if (movieIndex === -1) {
+            alert('סרט לא נמצא');
+            return;
+        }
 
-    saveMovies();
-    displayMovies();
+        movies[movieIndex] = {
+            ...movies[movieIndex],
+            title,
+            category,
+            videoId
+        };
 
-    // Reset form and close modal
-    e.target.reset();
-    document.getElementById('editModal').style.display = 'none';
+        await saveMovies(movies);
+        displayMovies(movies);
+        document.getElementById('editModal').style.display = 'none';
+        document.getElementById('editForm').reset();
+    } catch (error) {
+        console.error('Error editing movie:', error);
+        alert('שגיאה בעריכת הסרט');
+    }
 }
 
 function editMovie(videoId) {
@@ -226,6 +423,37 @@ function deleteMovie(videoId) {
 
 function saveMovies() {
     localStorage.setItem('movies', JSON.stringify(movies));
+}
+
+// Update handleDelete function
+async function handleDelete(event) {
+    event.preventDefault();
+    
+    const password = document.getElementById('deletePassword').value;
+    if (!verifyAdminPassword(password)) {
+        alert('סיסמה שגויה');
+        return;
+    }
+
+    const movieId = document.getElementById('deleteMovieId').value;
+
+    try {
+        const movies = await loadMovies();
+        const updatedMovies = movies.filter(m => m.id !== movieId);
+        
+        if (updatedMovies.length === movies.length) {
+            alert('סרט לא נמצא');
+            return;
+        }
+
+        await saveMovies(updatedMovies);
+        displayMovies(updatedMovies);
+        document.getElementById('deleteModal').style.display = 'none';
+        document.getElementById('deleteForm').reset();
+    } catch (error) {
+        console.error('Error deleting movie:', error);
+        alert('שגיאה במחיקת הסרט');
+    }
 }
 
 // Initialize everything when the DOM is loaded

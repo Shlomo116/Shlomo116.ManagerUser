@@ -26,9 +26,9 @@
                     <option value="documentary">דוקומנטרי</option>
                 </select>
             </div>
-            <button class="upload-button" id="uploadButton">
-                <i class="fas fa-plus"></i>
-                הוספת סרט
+            <button class="admin-button" id="adminButton">
+                <i class="fas fa-cog"></i>
+                כלי ניהול
             </button>
         </nav>
     </header>
@@ -38,6 +38,28 @@
             <!-- Movies will be added here dynamically -->
         </div>
     </main>
+
+    <!-- Admin Tools Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>כלי ניהול</h2>
+            <div class="admin-tools">
+                <button class="tool-button" id="addMovieButton">
+                    <i class="fas fa-plus"></i>
+                    הוספת סרט
+                </button>
+                <button class="tool-button" id="editMoviesButton">
+                    <i class="fas fa-edit"></i>
+                    עריכת סרטים
+                </button>
+                <button class="tool-button" id="deleteMoviesButton">
+                    <i class="fas fa-trash"></i>
+                    מחיקת סרטים
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Upload Modal -->
     <div id="uploadModal" class="modal">
@@ -76,11 +98,23 @@
                     <option value="action">אקשן</option>
                     <option value="documentary">דוקומנטרי</option>
                 </select>
-                <div class="edit-buttons">
-                    <button type="submit">שמור שינויים</button>
-                    <button type="button" class="delete-button" onclick="deleteMovie(document.getElementById('editMovieId').value)">
-                        מחק סרט
-                    </button>
+                <button type="submit">שמור שינויים</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>מחיקת סרט</h2>
+            <form id="deleteForm">
+                <input type="hidden" id="deleteMovieId">
+                <input type="password" id="deleteAdminPassword" placeholder="סיסמת מנהל" required>
+                <p>האם אתה בטוח שברצונך למחוק את הסרט?</p>
+                <div class="delete-buttons">
+                    <button type="submit" class="delete-button">מחק סרט</button>
+                    <button type="button" class="cancel-button" onclick="document.getElementById('deleteModal').style.display='none'">ביטול</button>
                 </div>
             </form>
         </div>
