@@ -184,4 +184,21 @@ main {
 
 .upload-button:hover {
     background-color: #218838;
+}
+
+.player-content {
+    max-width: 800px;
+    width: 90%;
+    padding: 0;
+    background: black;
+}
+
+#videoPlayer {
+    width: 100%;
+    aspect-ratio: 16/9;
+}
+
+.player-content .close {
+    color: white;
+    z-index: 1002;
 } 

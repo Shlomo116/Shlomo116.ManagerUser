@@ -1,6 +1,7 @@
 // Admin password hash - this is a simple hash for demonstration
 // In a real application, you would use a proper backend with secure password storage
-const ADMIN_PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+// The password is 'admin123' - you can change it by updating this hash
+const ADMIN_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
 
 // Sample movies data - in a real application, this would come from a database
 let movies = [
@@ -8,15 +9,13 @@ let movies = [
         id: 1,
         title: 'סרט לדוגמה 1',
         category: 'comedy',
-        thumbnail: 'https://img.youtube.com/vi/ZQmGPEh4yaU/maxresdefault.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=ZQmGPEh4yaU'
+        videoId: 'ZQmGPEh4yaU'
     },
     {
         id: 2,
         title: 'סרט לדוגמה 2',
         category: 'drama',
-        thumbnail: 'https://img.youtube.com/vi/FU2gJooc41E/maxresdefault.jpg',
-        videoUrl: 'https://www.youtube.com/watch?v=FU2gJooc41E'
+        videoId: 'FU2gJooc41E'
     }
 ];
 
@@ -27,8 +26,33 @@ const searchButton = document.getElementById('searchButton');
 const categorySelect = document.getElementById('categorySelect');
 const uploadModal = document.getElementById('uploadModal');
 const uploadForm = document.getElementById('uploadForm');
-const closeModal = document.querySelector('.close');
+const closeModal = document.querySelectorAll('.close');
 const uploadButton = document.getElementById('uploadButton');
+const playerModal = document.getElementById('playerModal');
+const videoPlayer = document.getElementById('videoPlayer');
+
+let player;
+
+// YouTube API initialization
+function onYouTubeIframeAPIReady() {
+    player = new YT.Player('videoPlayer', {
+        height: '100%',
+        width: '100%',
+        videoId: '',
+        playerVars: {
+            'autoplay': 1,
+            'controls': 1,
+            'rel': 0
+        }
+    });
+}
+
+// Extract YouTube video ID from URL
+function getYouTubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
 
 // Simple SHA-256 hash function
 async function sha256(message) {
@@ -46,7 +70,10 @@ function displayMovies(moviesToShow = movies) {
         const movieCard = document.createElement('div');
         movieCard.className = 'movie-card';
         movieCard.innerHTML = `
-            <img src="${movie.thumbnail}" alt="${movie.title}" class="movie-thumbnail">
+            <img src="https://img.youtube.com/vi/${movie.videoId}/maxresdefault.jpg" 
+                 alt="${movie.title}" 
+                 class="movie-thumbnail"
+                 onerror="this.src='https://img.youtube.com/vi/${movie.videoId}/hqdefault.jpg'">
             <div class="movie-info">
                 <h3 class="movie-title">${movie.title}</h3>
                 <p class="movie-category">${getCategoryName(movie.category)}</p>
@@ -84,7 +111,8 @@ function searchMovies() {
 
 // Play movie
 function playMovie(movie) {
-    window.open(movie.videoUrl, '_blank');
+    playerModal.style.display = 'block';
+    player.loadVideoById(movie.videoId);
 }
 
 // Upload functionality
@@ -95,7 +123,6 @@ async function handleUpload(event) {
     const title = document.getElementById('movieTitle').value;
     const category = document.getElementById('movieCategory').value;
     const videoUrl = document.getElementById('movieUrl').value;
-    const thumbnailUrl = document.getElementById('thumbnailUrl').value;
     
     // Hash the password and compare with stored hash
     const passwordHash = await sha256(password);
@@ -104,13 +131,19 @@ async function handleUpload(event) {
         return;
     }
     
+    // Extract YouTube video ID
+    const videoId = getYouTubeId(videoUrl);
+    if (!videoId) {
+        alert('קישור לא חוקי. אנא הזן קישור YouTube תקין');
+        return;
+    }
+    
     // In a real application, this would be saved to a database
     const newMovie = {
         id: movies.length + 1,
         title,
         category,
-        thumbnail: thumbnailUrl,
-        videoUrl: videoUrl
+        videoId
     };
     
     movies.push(newMovie);
@@ -132,14 +165,26 @@ uploadButton.addEventListener('click', () => {
     uploadModal.style.display = 'block';
 });
 
+closeModal.forEach(closeBtn => {
+    closeBtn.addEventListener('click', () => {
+        uploadModal.style.display = 'none';
+        playerModal.style.display = 'none';
+        if (player) {
+            player.stopVideo();
+        }
+    });
+});
+
 document.addEventListener('click', (e) => {
     if (e.target === uploadModal) {
         uploadModal.style.display = 'none';
     }
-});
-
-closeModal.addEventListener('click', () => {
-    uploadModal.style.display = 'none';
+    if (e.target === playerModal) {
+        playerModal.style.display = 'none';
+        if (player) {
+            player.stopVideo();
+        }
+    }
 });
 
 // Initial display

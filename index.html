@@ -42,12 +42,19 @@
                 <input type="text" id="movieTitle" placeholder="שם הסרט" required>
                 <input type="text" id="movieCategory" placeholder="קטגוריה" required>
                 <input type="url" id="movieUrl" placeholder="קישור לסרטון (YouTube או אחר)" required>
-                <input type="url" id="thumbnailUrl" placeholder="קישור לתמונה ממוזערת" required>
                 <button type="submit">העלה סרט</button>
             </form>
         </div>
     </div>
 
+    <div id="playerModal" class="modal">
+        <div class="modal-content player-content">
+            <span class="close">&times;</span>
+            <div id="videoPlayer"></div>
+        </div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script src="script.js"></script>
 </body>
 </html> 
