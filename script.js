@@ -986,4 +986,29 @@ function setupEventListeners() {
             }
         });
     }
-} 
+}
+
+// --- Night Mode Toggle with localStorage ---
+function applyNightModeFromStorage() {
+    const night = localStorage.getItem('nightMode') === 'true';
+    document.body.classList.toggle('night-mode', night);
+    const nightBtn = document.getElementById('nightModeToggle');
+    if (nightBtn) {
+        nightBtn.innerHTML = night ? '☀️ מצב יום' : '🌙 מצב לילה';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Apply night mode from storage
+    applyNightModeFromStorage();
+    // Night mode toggle
+    const nightBtn = document.getElementById('nightModeToggle');
+    if (nightBtn) {
+        nightBtn.addEventListener('click', function() {
+            const isNight = !document.body.classList.contains('night-mode');
+            document.body.classList.toggle('night-mode', isNight);
+            localStorage.setItem('nightMode', isNight);
+            nightBtn.innerHTML = isNight ? '☀️ מצב יום' : '🌙 מצב לילה';
+        });
+    }
+}); 

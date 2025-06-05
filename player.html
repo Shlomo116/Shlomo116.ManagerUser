@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>נגן סרטים</title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="favicon.png">
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -231,6 +232,82 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .share-btn {
+            margin-top: 1rem;
+            background: var(--secondary-color);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1.2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .share-btn:hover {
+            background: #217dbb;
+        }
+        .share-tooltip {
+            display: inline-block;
+            margin-right: 1rem;
+            color: #27ae60;
+            font-size: 1rem;
+            vertical-align: middle;
+            transition: opacity 0.3s;
+        }
+
+        .night-toggle {
+            background: #222;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1.2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: background 0.2s;
+        }
+        .night-toggle:hover {
+            background: #444;
+        }
+        body.night-mode {
+            background: #181c22;
+            color: #f5f6fa;
+        }
+        body.night-mode .player-container,
+        body.night-mode .sidebar {
+            background: #23272f;
+            color: #f5f6fa;
+        }
+        body.night-mode .related-movie {
+            background: #23272f;
+            color: #f5f6fa;
+        }
+        body.night-mode .related-movie:hover {
+            background: #181c22;
+        }
+        body.night-mode .share-btn {
+            background: #444;
+            color: #fff;
+        }
+        body.night-mode .share-btn:hover {
+            background: #666;
+        }
+        body.night-mode .night-toggle {
+            background: #fff;
+            color: #222;
+        }
+        body.night-mode .logo,
+        body.night-mode h3,
+        body.night-mode h4,
+        body.night-mode .movie-title,
+        body.night-mode .related-movie-info p,
+        body.night-mode .close-button {
+            color: #fff !important;
+        }
+        body.night-mode .share-tooltip {
+            color: #27ef60;
+        }
     </style>
 </head>
 <body>
@@ -238,12 +315,15 @@
         <div class="header-content">
             <a href="index.html" class="logo">סרטים כשרים</a>
             <a href="index.html" class="close-button">חזרה לדף הבית</a>
+            <button id="nightModeToggle" class="night-toggle">🌙 מצב לילה</button>
         </div>
     </header>
 
     <div class="container">
         <div class="player-container">
             <div id="player"></div>
+            <button id="shareButton" class="share-btn" title="העתק קישור לסרטון">🔗 שתף קישור</button>
+            <span id="shareTooltip" class="share-tooltip" style="display:none;">הקישור הועתק!</span>
         </div>
         <div class="sidebar">
             <h3>סרטים מאותה קטגוריה</h3>
@@ -383,6 +463,8 @@
                     }
                 });
             });
+            // Animation
+            fadeInRelatedMovies();
         }
 
         // Get category name in Hebrew
@@ -396,9 +478,14 @@
             return categories[category] || category;
         }
 
-        function onYouTubeIframeAPIReady() {
+        // --- Always reload player on videoId change ---
+        function loadOrReloadPlayer() {
             const videoId = getVideoIdFromUrl();
-            // Always show the player, even if not found in DB
+            // Remove previous player iframe if exists
+            const playerDiv = document.getElementById('player');
+            if (playerDiv) {
+                playerDiv.innerHTML = '';
+            }
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
@@ -413,8 +500,11 @@
                     'onStateChange': onPlayerStateChange
                 }
             });
-            // Load and display related movies
             displayRelatedMovies();
+        }
+
+        function onYouTubeIframeAPIReady() {
+            loadOrReloadPlayer();
         }
 
         function onPlayerStateChange(event) {
@@ -430,11 +520,107 @@
             }
         });
 
-        // Listen to browser navigation (back/forward)
+        // Listen to browser navigation (back/forward) and always reload player
         window.addEventListener('popstate', function() {
-            const videoId = getVideoIdFromUrl();
-            updatePlayer(videoId);
+            loadOrReloadPlayer();
             updateRelatedMoviesAndCurrentMovie();
+        });
+
+        // Also reload player if user clicks a related movie (pushState)
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.related-movie')) {
+                setTimeout(loadOrReloadPlayer, 100);
+            }
+        });
+
+        // --- Share Button Logic ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const shareBtn = document.getElementById('shareButton');
+            const shareTooltip = document.getElementById('shareTooltip');
+            if (shareBtn) {
+                shareBtn.addEventListener('click', function() {
+                    const url = window.location.href;
+                    navigator.clipboard.writeText(url).then(() => {
+                        shareTooltip.style.display = 'inline-block';
+                        shareTooltip.style.opacity = 1;
+                        setTimeout(() => {
+                            shareTooltip.style.opacity = 0;
+                            setTimeout(() => { shareTooltip.style.display = 'none'; }, 300);
+                        }, 1200);
+                    });
+                });
+            }
+        });
+
+        // --- Smooth Animation for Related Movies ---
+        function fadeInRelatedMovies() {
+            const related = document.querySelectorAll('.related-movie');
+            related.forEach((el, i) => {
+                el.style.opacity = 0;
+                el.style.transition = 'opacity 0.5s';
+                setTimeout(() => { el.style.opacity = 1; }, 100 + i * 80);
+            });
+        }
+
+        // --- Preview on Hover ---
+        let previewImg = null;
+        document.addEventListener('mouseover', function(e) {
+            if (e.target.closest('.related-movie')) {
+                if (previewImg) return; // Prevent duplicate previews
+                const movie = e.target.closest('.related-movie');
+                const img = movie.querySelector('img');
+                if (img) {
+                    previewImg = document.createElement('img');
+                    previewImg.src = img.src;
+                    previewImg.style.position = 'fixed';
+                    previewImg.style.top = (e.clientY + 10) + 'px';
+                    previewImg.style.left = (e.clientX - 160) + 'px';
+                    previewImg.style.width = '220px';
+                    previewImg.style.height = '124px';
+                    previewImg.style.zIndex = 9999;
+                    previewImg.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+                    previewImg.style.borderRadius = '8px';
+                    previewImg.style.pointerEvents = 'none';
+                    previewImg.style.transition = 'opacity 0.3s';
+                    previewImg.style.opacity = 0;
+                    document.body.appendChild(previewImg);
+                    setTimeout(() => { if (previewImg) previewImg.style.opacity = 1; }, 10);
+                }
+            }
+        });
+        document.addEventListener('mousemove', function(e) {
+            if (previewImg) {
+                previewImg.style.top = (e.clientY + 10) + 'px';
+                previewImg.style.left = (e.clientX - 160) + 'px';
+            }
+        });
+        document.addEventListener('mouseout', function(e) {
+            if (previewImg && (!e.relatedTarget || !e.relatedTarget.closest('.related-movie'))) {
+                previewImg.style.opacity = 0;
+                setTimeout(() => { if (previewImg && previewImg.parentNode) previewImg.parentNode.removeChild(previewImg); previewImg = null; }, 300);
+            }
+        });
+
+        // --- Night Mode Toggle with localStorage ---
+        function applyNightModeFromStorage() {
+            const night = localStorage.getItem('nightMode') === 'true';
+            document.body.classList.toggle('night-mode', night);
+            const nightBtn = document.getElementById('nightModeToggle');
+            if (nightBtn) {
+                nightBtn.innerHTML = night ? '☀️ מצב יום' : '🌙 מצב לילה';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            applyNightModeFromStorage();
+            const nightBtn = document.getElementById('nightModeToggle');
+            if (nightBtn) {
+                nightBtn.addEventListener('click', function() {
+                    const isNight = !document.body.classList.contains('night-mode');
+                    document.body.classList.toggle('night-mode', isNight);
+                    localStorage.setItem('nightMode', isNight);
+                    nightBtn.innerHTML = isNight ? '☀️ מצב יום' : '🌙 מצב לילה';
+                });
+            }
         });
     </script>
 </body>

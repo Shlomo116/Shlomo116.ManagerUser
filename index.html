@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>סרטים כשרים</title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="favicon.png">
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -367,12 +368,56 @@
                 width: 100%;
             }
         }
+
+        .night-toggle {
+            background: #222;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1.2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: background 0.2s;
+        }
+        .night-toggle:hover {
+            background: #444;
+        }
+        body.night-mode {
+            background: #181c22;
+            color: #e0e0e0;
+        }
+        body.night-mode .container,
+        body.night-mode .search-container,
+        body.night-mode .movie-card,
+        body.night-mode .modal-content {
+            background: #23272f !important;
+            color: #e0e0e0 !important;
+        }
+        body.night-mode .movie-title,
+        body.night-mode .logo {
+            color: #fff !important;
+        }
+        body.night-mode .admin-button,
+        body.night-mode .search-button {
+            background: #444 !important;
+            color: #fff !important;
+        }
+        body.night-mode .admin-button:hover,
+        body.night-mode .search-button:hover {
+            background: #666 !important;
+        }
+        body.night-mode .night-toggle {
+            background: #fff;
+            color: #222;
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="header-content">
             <a href="#" class="logo">סרטים כשרים</a>
+            <button id="nightModeToggle" class="night-toggle">🌙 מצב לילה</button>
             <button id="adminButton" class="admin-button">כלי ניהול</button>
         </div>
     </header>
