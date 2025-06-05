@@ -177,39 +177,53 @@
             .container {
                 flex-direction: column;
             }
-
-            .sidebar {
-                width: 100%;
+            .player-container, .sidebar {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
                 margin-top: 1rem;
             }
-
-            .related-movies {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                gap: 1rem;
-            }
-
-            .related-movie {
-                flex-direction: column;
-            }
-
-            .related-movie img {
-                width: 100%;
-                height: 150px;
-            }
         }
-
         @media (max-width: 768px) {
             .container {
-                padding: 10px;
+                flex-direction: column;
+                padding: 8px;
+                gap: 0;
             }
-
-            .player-container {
-                padding: 1rem;
+            .player-container, .sidebar {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                margin-top: 0.5rem;
+                padding: 0.5rem !important;
             }
-
+            .video-title {
+                font-size: 1.1rem;
+            }
+            .share-btn, .night-toggle, .close-button {
+                font-size: 1rem;
+                padding: 0.5rem 1rem;
+            }
             .related-movies {
-                grid-template-columns: 1fr;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .related-movie img {
+                width: 100%;
+                height: 100px;
+            }
+        }
+        @media (max-width: 480px) {
+            .player-container, .sidebar {
+                padding: 0.2rem !important;
+            }
+            .video-title {
+                font-size: 1rem;
+            }
+            .share-btn, .night-toggle, .close-button {
+                font-size: 0.95rem;
+                padding: 0.4rem 0.7rem;
             }
         }
 
@@ -308,6 +322,17 @@
         body.night-mode .share-tooltip {
             color: #27ef60;
         }
+        .video-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-align: right;
+            margin-bottom: 1rem;
+            word-break: break-word;
+        }
+        body.night-mode .video-title {
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -321,6 +346,7 @@
 
     <div class="container">
         <div class="player-container">
+            <h2 id="videoTitle" class="video-title" style="margin-bottom: 1rem;"></h2>
             <div id="player"></div>
             <button id="shareButton" class="share-btn" title="העתק קישור לסרטון">🔗 שתף קישור</button>
             <span id="shareTooltip" class="share-tooltip" style="display:none;">הקישור הועתק!</span>
@@ -501,6 +527,7 @@
                 }
             });
             displayRelatedMovies();
+            setVideoTitle();
         }
 
         function onYouTubeIframeAPIReady() {
@@ -631,6 +658,16 @@
                 window.onYouTubeIframeAPIReady = loadOrReloadPlayer;
             }
         });
+
+        // Set video title above player
+        function setVideoTitle() {
+            const titleElem = document.getElementById('videoTitle');
+            if (titleElem && currentMovie && currentMovie.title) {
+                titleElem.textContent = currentMovie.title;
+            } else if (titleElem) {
+                titleElem.textContent = '';
+            }
+        }
     </script>
 </body>
 </html> 

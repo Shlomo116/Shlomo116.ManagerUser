@@ -349,23 +349,70 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            .movies-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                gap: 1rem;
-            }
-
-            .modal-content {
-                margin: 10% auto;
-                width: 90%;
-                padding: 1.5rem;
-            }
-
-            .search-box {
+            .header-content {
                 flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
             }
-
-            .search-button {
+            .container {
+                padding: 8px;
+            }
+            .movies-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 1rem 0;
+            }
+            .movie-card {
+                min-width: 0;
                 width: 100%;
+            }
+            .movie-thumbnail {
+                height: 160px;
+            }
+            .movie-info {
+                padding: 1rem;
+            }
+            .admin-button, .search-button, .night-toggle {
+                font-size: 1rem;
+                padding: 0.5rem 1rem;
+            }
+            .modal-content {
+                width: 98% !important;
+                padding: 0.7rem !important;
+            }
+            .form-group input, .form-group select, .form-group textarea {
+                font-size: 1rem;
+                padding: 0.7rem;
+                width: 100%;
+            }
+            .submit-button, .cancel-button {
+                width: 100%;
+                font-size: 1rem;
+                padding: 0.7rem 0;
+            }
+        }
+        @media (max-width: 480px) {
+            .movie-thumbnail {
+                height: 110px;
+            }
+            .movie-title {
+                font-size: 1rem;
+            }
+            .admin-button, .search-button, .night-toggle {
+                font-size: 0.95rem;
+                padding: 0.4rem 0.7rem;
+            }
+            .modal-content {
+                width: 100% !important;
+                padding: 0.3rem !important;
+            }
+            .form-group input, .form-group select, .form-group textarea {
+                font-size: 0.95rem;
+                padding: 0.5rem;
+            }
+            .submit-button, .cancel-button {
+                font-size: 0.95rem;
+                padding: 0.5rem 0;
             }
         }
 
@@ -410,6 +457,25 @@
         body.night-mode .night-toggle {
             background: #fff;
             color: #222;
+        }
+        body.night-mode .modal-content,
+        body.night-mode .form-group label,
+        body.night-mode .form-group input,
+        body.night-mode .form-group select,
+        body.night-mode .form-group textarea {
+            color: #fff !important;
+            background: #23272f !important;
+            border-color: #444 !important;
+        }
+        body.night-mode .submit-button,
+        body.night-mode .cancel-button {
+            background: #444 !important;
+            color: #fff !important;
+            border-color: #666 !important;
+        }
+        body.night-mode .submit-button:hover,
+        body.night-mode .cancel-button:hover {
+            background: #666 !important;
         }
     </style>
 </head>

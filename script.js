@@ -307,19 +307,20 @@ async function sha256(message) {
 function displayMovies(moviesToShow = movies) {
     const moviesGrid = document.querySelector('.movies-grid');
     if (!moviesGrid) return;
-
-    moviesGrid.innerHTML = moviesToShow.map(movie => `
-        <div class="movie-card">
-            <img src="https://img.youtube.com/vi/${movie.videoId}/maxresdefault.jpg" 
-                 alt="${movie.title}" 
-                 class="movie-thumbnail"
-                 onerror="this.src='https://img.youtube.com/vi/${movie.videoId}/hqdefault.jpg'">
-            <div class="movie-info">
-                <h3 class="movie-title">${movie.title}</h3>
-                <p class="movie-category">${getCategoryName(movie.category)}</p>
+    moviesGrid.innerHTML = moviesToShow.map(movie => {
+        const videoId = movie.videoId || extractVideoId(movie.url);
+        const categoryName = getCategoryName(movie.category);
+        return `
+            <div class="movie-card" data-id="${movie.id}">
+                <img class="movie-thumbnail" src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="${movie.title}">
+                <div class="movie-info">
+                    <div class="movie-title">${movie.title}</div>
+                    <div style="flex:1;"></div>
+                    <div class="movie-category" style="position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; color: var(--secondary-color); font-weight: 500;">${categoryName}</div>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
     // Add click event to movie cards
     document.querySelectorAll('.movie-card').forEach(card => {
