@@ -258,9 +258,17 @@ async function saveCategoriesToGitHub(categoriesArr, token) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('GitHub API Error:', errorData);
-            alert(`שגיאה בשמירת רשימת הקטגוריות: ${errorData.message}`);
+            let errorMessage;
+            try {
+                const errorData = await response.json();
+                console.error('GitHub API Error:', errorData);
+                errorMessage = errorData.message;
+            } catch (e) {
+                const errorText = await response.text();
+                console.error('GitHub API Error (raw):', errorText);
+                errorMessage = errorText;
+            }
+            alert(`שגיאה בשמירת רשימת הקטגוריות: ${errorMessage}`);
             return false;
         }
 
@@ -374,6 +382,23 @@ async function getVideoTitle(videoId) {
     }
 }
 
+// Token management
+function getToken() {
+    let token = localStorage.getItem('githubToken');
+    if (!token) {
+        token = prompt('הזן את טוקן הגיט האב שלך:');
+        if (token) {
+            localStorage.setItem('githubToken', token);
+        }
+    }
+    return token;
+}
+
+function clearToken() {
+    localStorage.removeItem('githubToken');
+    alert('הטוקן נמחק מהמחשב');
+}
+
 // Update handleUpload function
 async function handleUpload(event) {
     event.preventDefault();
@@ -399,7 +424,7 @@ async function handleUpload(event) {
 
     const category = document.getElementById('movieCategory').value;
     
-    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    const token = getToken();
     if (!token) {
         alert('לא הוזן טוקן');
         return;
@@ -569,7 +594,7 @@ async function handleDelete(event) {
         return;
     }
 
-    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    const token = getToken();
     if (!token) {
         alert('לא הוזן טוקן');
         return;
@@ -633,7 +658,7 @@ async function handleEdit(event) {
         return;
     }
 
-    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    const token = getToken();
     if (!token) {
         alert('לא הוזן טוקן');
         return;
@@ -694,7 +719,7 @@ async function handleCategorySubmit(event) {
         return;
     }
 
-    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    const token = getToken();
     if (!token) {
         alert('לא הוזן טוקן');
         return;
@@ -737,7 +762,7 @@ async function deleteCategory(categoryValue) {
         return;
     }
 
-    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    const token = getToken();
     if (!token) {
         alert('לא הוזן טוקן');
         return;
@@ -970,6 +995,12 @@ function setupEventListeners() {
                 }
             }
         });
+    }
+
+    // Add event listener for the 'שכח טוקן' button
+    const clearTokenButton = document.getElementById('clearTokenButton');
+    if (clearTokenButton) {
+        clearTokenButton.addEventListener('click', clearToken);
     }
 }
 
