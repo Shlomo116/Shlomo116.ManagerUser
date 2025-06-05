@@ -21,6 +21,14 @@ const defaultMovies = [
 // Initialize movies array
 let movies = [];
 
+// Categories data structure
+let categories = {
+    'comedy': 'קומדיה',
+    'drama': 'דרמה',
+    'action': 'אקשן',
+    'documentary': 'דוקומנטרי'
+};
+
 // Load movies from GitHub (public access)
 async function loadMoviesFromGitHub() {
     try {
@@ -139,6 +147,70 @@ async function saveMoviesToGitHub(movies, token) {
         console.error('Error saving movies:', error);
         alert('שגיאה בשמירת רשימת הסרטים');
         return false;
+    }
+}
+
+// Load categories from GitHub (public access)
+async function loadCategoriesFromGitHub() {
+    try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/categories.json`, {
+            headers: {
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const content = decodeURIComponent(escape(atob(data.content)));
+            return JSON.parse(content);
+        } else if (response.status === 404) {
+            // If file doesn't exist, return default categories
+            console.log('Categories file not found, using default categories...');
+            return categories;
+        } else {
+            console.error('Failed to load categories from GitHub');
+            return categories;
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        return categories;
+    }
+}
+
+// Load categories from GitHub with token (admin access)
+async function loadCategoriesFromGitHubWithToken(token) {
+    if (!token) {
+        console.error('לא הוזן טוקן');
+        return null;
+    }
+
+    try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/categories.json`, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const content = decodeURIComponent(escape(atob(data.content)));
+            return JSON.parse(content);
+        } else if (response.status === 404) {
+            // If file doesn't exist, create it with default categories
+            console.log('Creating new categories.json file with default categories...');
+            const success = await saveCategoriesToGitHub(categories, token);
+            return success ? categories : null;
+        } else {
+            const errorData = await response.json();
+            console.error('GitHub API Error:', errorData);
+            alert(`שגיאה בטעינת רשימת הקטגוריות: ${errorData.message}`);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        alert('שגיאה בטעינת רשימת הקטגוריות');
+        return null;
     }
 }
 
@@ -535,13 +607,184 @@ async function handleEdit(event) {
     }
 }
 
+// Handle category form submission
+async function handleCategorySubmit(event) {
+    event.preventDefault();
+    
+    const password = document.getElementById('categoryAdminPassword').value;
+    if (!verifyAdminPassword(password)) {
+        alert('סיסמה שגויה');
+        return;
+    }
+
+    const categoryName = document.getElementById('categoryName').value;
+    const categoryValue = document.getElementById('categoryValue').value.toLowerCase();
+
+    if (!categoryName || !categoryValue) {
+        alert('יש למלא את כל השדות');
+        return;
+    }
+
+    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    if (!token) {
+        alert('לא הוזן טוקן');
+        return;
+    }
+
+    try {
+        // First, load current categories from GitHub
+        const currentCategories = await loadCategoriesFromGitHubWithToken(token);
+        if (!currentCategories) {
+            alert('שגיאה בטעינת רשימת הקטגוריות');
+            return;
+        }
+
+        // Add new category
+        const updatedCategories = {
+            ...currentCategories,
+            [categoryValue]: categoryName
+        };
+
+        const success = await saveCategoriesToGitHub(updatedCategories, token);
+        
+        if (success) {
+            categories = updatedCategories;
+            updateCategoriesList();
+            updateCategorySelects();
+            document.getElementById('categoryForm').reset();
+            alert('הקטגוריה נוספה בהצלחה');
+        } else {
+            alert('שגיאה בשמירת הקטגוריה בגיט האב');
+        }
+    } catch (error) {
+        console.error('Error adding category:', error);
+        alert('שגיאה בהוספת הקטגוריה');
+    }
+}
+
+// Delete category
+async function deleteCategory(categoryValue) {
+    const password = prompt('הזן סיסמת מנהל:');
+    if (!verifyAdminPassword(password)) {
+        alert('סיסמה שגויה');
+        return;
+    }
+
+    const token = prompt('הזן את טוקן הגיט האב שלך:');
+    if (!token) {
+        alert('לא הוזן טוקן');
+        return;
+    }
+
+    try {
+        // First, load current categories from GitHub
+        const currentCategories = await loadCategoriesFromGitHubWithToken(token);
+        if (!currentCategories) {
+            alert('שגיאה בטעינת רשימת הקטגוריות');
+            return;
+        }
+
+        // Check if category is in use
+        const movies = await loadMoviesFromGitHubWithToken(token);
+        if (movies) {
+            const categoryInUse = movies.some(movie => movie.category === categoryValue);
+            if (categoryInUse) {
+                alert('לא ניתן למחוק קטגוריה שנמצאת בשימוש');
+                return;
+            }
+        }
+
+        // Remove category
+        const updatedCategories = { ...currentCategories };
+        delete updatedCategories[categoryValue];
+
+        const success = await saveCategoriesToGitHub(updatedCategories, token);
+        
+        if (success) {
+            categories = updatedCategories;
+            updateCategoriesList();
+            updateCategorySelects();
+            alert('הקטגוריה נמחקה בהצלחה');
+        } else {
+            alert('שגיאה במחיקת הקטגוריה מגיט האב');
+        }
+    } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('שגיאה במחיקת הקטגוריה');
+    }
+}
+
+// Update categories list in the modal
+function updateCategoriesList() {
+    const categoriesListContent = document.getElementById('categoriesListContent');
+    if (!categoriesListContent) return;
+
+    categoriesListContent.innerHTML = Object.entries(categories)
+        .map(([value, name]) => `
+            <div class="category-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 4px;">
+                <div>
+                    <strong>${name}</strong> (${value})
+                </div>
+                <button onclick="deleteCategory('${value}')" class="delete-button" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                    מחק
+                </button>
+            </div>
+        `)
+        .join('');
+}
+
+// Update category selects in all forms
+function updateCategorySelects() {
+    const categorySelects = [
+        document.getElementById('categoryFilter'),
+        document.getElementById('movieCategory'),
+        document.getElementById('editMovieCategory')
+    ];
+
+    categorySelects.forEach(select => {
+        if (!select) return;
+
+        // Keep the "all" option in the filter
+        const isFilter = select.id === 'categoryFilter';
+        select.innerHTML = isFilter ? '<option value="all">כל הקטגוריות</option>' : '';
+
+        // Add all categories
+        Object.entries(categories).forEach(([value, name]) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = name;
+            select.appendChild(option);
+        });
+    });
+}
+
 // Initialize the page
-document.addEventListener('DOMContentLoaded', async () => {
-    // Load movies from GitHub (public access)
-    const loadedMovies = await loadMoviesFromGitHub();
-    movies = loadedMovies;
-    displayMovies(movies);
+async function initializePage() {
+    try {
+        // Load movies and categories
+        const [loadedMovies, loadedCategories] = await Promise.all([
+            loadMoviesFromGitHub(),
+            loadCategoriesFromGitHub()
+        ]);
+
+        if (loadedMovies) {
+            movies = loadedMovies;
+            displayMovies(movies);
+        }
+
+        if (loadedCategories) {
+            categories = loadedCategories;
+            updateCategorySelects();
+        }
+    } catch (error) {
+        console.error('Error initializing page:', error);
+    }
+}
+
+// Call initializePage when the page loads
+document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    initializePage();
 });
 
 // Setup event listeners
@@ -624,5 +867,22 @@ function setupEventListeners() {
     const deleteForm = document.getElementById('deleteForm');
     if (deleteForm) {
         deleteForm.addEventListener('submit', handleDelete);
+    }
+
+    // Category management
+    const manageCategoriesButton = document.getElementById('manageCategoriesButton');
+    const categoryModal = document.getElementById('categoryModal');
+    const categoryForm = document.getElementById('categoryForm');
+
+    if (manageCategoriesButton && categoryModal) {
+        manageCategoriesButton.addEventListener('click', async () => {
+            adminModal.style.display = 'none';
+            categoryModal.style.display = 'block';
+            updateCategoriesList();
+        });
+    }
+
+    if (categoryForm) {
+        categoryForm.addEventListener('submit', handleCategorySubmit);
     }
 } 
