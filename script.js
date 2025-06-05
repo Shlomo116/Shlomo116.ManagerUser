@@ -214,6 +214,62 @@ async function loadCategoriesFromGitHubWithToken(token) {
     }
 }
 
+// Save categories to GitHub
+async function saveCategoriesToGitHub(categories, token) {
+    if (!token) {
+        console.error('לא הוזן טוקן');
+        return false;
+    }
+
+    try {
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(categories, null, 2))));
+        
+        // Get current SHA if file exists
+        let sha = null;
+        try {
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/categories.json`, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                sha = data.sha;
+            }
+        } catch (error) {
+            console.log('File does not exist, will create new file');
+        }
+
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/categories.json`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: 'Update categories list',
+                content: content,
+                sha: sha
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('GitHub API Error:', errorData);
+            alert(`שגיאה בשמירת רשימת הקטגוריות: ${errorData.message}`);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error saving categories:', error);
+        alert('שגיאה בשמירת רשימת הקטגוריות');
+        return false;
+    }
+}
+
 // Admin password verification
 const ADMIN_PASSWORD = 'admin123';
 
