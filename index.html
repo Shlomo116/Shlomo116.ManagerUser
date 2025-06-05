@@ -420,8 +420,15 @@
                     <input type="password" id="adminPassword" required>
                 </div>
                 <div class="form-group">
+                    <label for="movieUrl">כתובת יוטיוב:</label>
+                    <input type="url" id="movieUrl" required>
+                </div>
+                <div class="form-group">
                     <label for="movieTitle">כותרת הסרט:</label>
-                    <input type="text" id="movieTitle" required>
+                    <input type="text" id="movieTitle" readonly>
+                    <div id="titleLoading" style="display: none; color: #666; margin-top: 5px;">
+                        טוען כותרת...
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="movieCategory">קטגוריה:</label>
@@ -431,10 +438,6 @@
                         <option value="action">אקשן</option>
                         <option value="documentary">דוקומנטרי</option>
                     </select>
-                </div>
-                <div class="form-group">
-                    <label for="movieUrl">כתובת יוטיוב:</label>
-                    <input type="url" id="movieUrl" required>
                 </div>
                 <button type="submit" class="submit-button">הוספת סרט</button>
                 <button type="button" class="cancel-button">ביטול</button>

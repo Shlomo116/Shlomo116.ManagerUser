@@ -364,6 +364,21 @@ function playMovie(movie) {
     window.location.href = `player.html?v=${movie.videoId}`;
 }
 
+// Get video title from YouTube
+async function getVideoTitle(videoId) {
+    try {
+        const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+        const data = await response.json();
+        if (data.title) {
+            return data.title;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching video title:', error);
+        return null;
+    }
+}
+
 // Update handleUpload function
 async function handleUpload(event) {
     event.preventDefault();
@@ -374,16 +389,21 @@ async function handleUpload(event) {
         return;
     }
 
-    const title = document.getElementById('movieTitle').value;
-    const category = document.getElementById('movieCategory').value;
     const url = document.getElementById('movieUrl').value;
-    
     const videoId = extractVideoId(url);
     if (!videoId) {
         alert('כתובת יוטיוב לא תקינה');
         return;
     }
 
+    const title = document.getElementById('movieTitle').value;
+    if (!title) {
+        alert('לא נמצאה כותרת לסרטון');
+        return;
+    }
+
+    const category = document.getElementById('movieCategory').value;
+    
     const token = prompt('הזן את טוקן הגיט האב שלך:');
     if (!token) {
         alert('לא הוזן טוקן');
@@ -940,5 +960,30 @@ function setupEventListeners() {
 
     if (categoryForm) {
         categoryForm.addEventListener('submit', handleCategorySubmit);
+    }
+
+    // Add event listener for URL input in upload form
+    const movieUrlInput = document.getElementById('movieUrl');
+    if (movieUrlInput) {
+        movieUrlInput.addEventListener('change', async function() {
+            const url = this.value;
+            const videoId = extractVideoId(url);
+            const titleInput = document.getElementById('movieTitle');
+            const titleLoading = document.getElementById('titleLoading');
+            
+            if (videoId) {
+                titleLoading.style.display = 'block';
+                titleInput.value = '';
+                
+                const title = await getVideoTitle(videoId);
+                titleLoading.style.display = 'none';
+                
+                if (title) {
+                    titleInput.value = title;
+                } else {
+                    alert('לא ניתן היה לקבל את כותרת הסרטון');
+                }
+            }
+        });
     }
 } 
