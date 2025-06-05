@@ -22,12 +22,13 @@ const defaultMovies = [
 let movies = [];
 
 // Categories data structure
-let categories = {
-    'comedy': 'קומדיה',
-    'drama': 'דרמה',
-    'action': 'אקשן',
-    'documentary': 'דוקומנטרי'
-};
+let categories = [
+    'קומדיה',
+    'דרמה',
+    'אקשן',
+    'דוקומנטרי',
+    'חדשות'
+];
 
 // Load movies from GitHub (public access)
 async function loadMoviesFromGitHub() {
@@ -162,7 +163,9 @@ async function loadCategoriesFromGitHub() {
         if (response.ok) {
             const data = await response.json();
             const content = decodeURIComponent(escape(atob(data.content)));
-            return JSON.parse(content);
+            const loaded = JSON.parse(content);
+            // Always return as array
+            return Array.isArray(loaded) ? loaded : Object.values(loaded);
         } else if (response.status === 404) {
             // If file doesn't exist, return default categories
             console.log('Categories file not found, using default categories...');
@@ -214,16 +217,15 @@ async function loadCategoriesFromGitHubWithToken(token) {
     }
 }
 
-// Save categories to GitHub
-async function saveCategoriesToGitHub(categories, token) {
+// Save categories to GitHub (array only)
+async function saveCategoriesToGitHub(categoriesArr, token) {
     if (!token) {
         console.error('לא הוזן טוקן');
         return false;
     }
 
     try {
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(categories, null, 2))));
-        
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(categoriesArr, null, 2))));
         // Get current SHA if file exists
         let sha = null;
         try {
@@ -309,14 +311,12 @@ function displayMovies(moviesToShow = movies) {
     if (!moviesGrid) return;
     moviesGrid.innerHTML = moviesToShow.map(movie => {
         const videoId = movie.videoId || extractVideoId(movie.url);
-        const categoryName = getCategoryName(movie.category);
         return `
             <div class="movie-card" data-id="${movie.id}">
                 <img class="movie-thumbnail" src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="${movie.title}">
                 <div class="movie-info">
                     <div class="movie-title">${movie.title}</div>
-                    <div style="flex:1;"></div>
-                    <div class="movie-category" style="position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; color: var(--secondary-color); font-weight: 500;">${categoryName}</div>
+                    <div class="movie-category">${movie.category}</div>
                 </div>
             </div>
         `;
@@ -331,15 +331,9 @@ function displayMovies(moviesToShow = movies) {
     });
 }
 
-// Get category name in Hebrew
+// Get category name (now just returns the value itself)
 function getCategoryName(category) {
-    const categories = {
-        'comedy': 'קומדיה',
-        'drama': 'דרמה',
-        'action': 'אקשן',
-        'documentary': 'דוקומנטרי'
-    };
-    return categories[category] || category;
+    return category;
 }
 
 // Filter movies
@@ -684,7 +678,7 @@ async function handleEdit(event) {
     }
 }
 
-// Handle category form submission
+// Add category (Hebrew only)
 async function handleCategorySubmit(event) {
     event.preventDefault();
     
@@ -694,11 +688,9 @@ async function handleCategorySubmit(event) {
         return;
     }
 
-    const categoryName = document.getElementById('categoryName').value;
-    const categoryValue = document.getElementById('categoryValue').value.toLowerCase();
-
-    if (!categoryName || !categoryValue) {
-        alert('יש למלא את כל השדות');
+    const categoryName = document.getElementById('categoryName').value.trim();
+    if (!categoryName) {
+        alert('יש למלא את שם הקטגוריה');
         return;
     }
 
@@ -710,18 +702,16 @@ async function handleCategorySubmit(event) {
 
     try {
         // First, load current categories from GitHub
-        const currentCategories = await loadCategoriesFromGitHubWithToken(token);
+        const currentCategories = await loadCategoriesFromGitHub();
         if (!currentCategories) {
             alert('שגיאה בטעינת רשימת הקטגוריות');
             return;
         }
-
-        // Add new category
-        const updatedCategories = {
-            ...currentCategories,
-            [categoryValue]: categoryName
-        };
-
+        if (currentCategories.includes(categoryName)) {
+            alert('הקטגוריה כבר קיימת');
+            return;
+        }
+        const updatedCategories = [...currentCategories, categoryName];
         const success = await saveCategoriesToGitHub(updatedCategories, token);
         
         if (success) {
@@ -739,7 +729,7 @@ async function handleCategorySubmit(event) {
     }
 }
 
-// Delete category
+// Delete category (Hebrew only)
 async function deleteCategory(categoryValue) {
     const password = prompt('הזן סיסמת מנהל:');
     if (!verifyAdminPassword(password)) {
@@ -755,12 +745,11 @@ async function deleteCategory(categoryValue) {
 
     try {
         // First, load current categories from GitHub
-        const currentCategories = await loadCategoriesFromGitHubWithToken(token);
+        const currentCategories = await loadCategoriesFromGitHub();
         if (!currentCategories) {
             alert('שגיאה בטעינת רשימת הקטגוריות');
             return;
         }
-
         // Check if category is in use
         const movies = await loadMoviesFromGitHubWithToken(token);
         if (movies) {
@@ -770,11 +759,8 @@ async function deleteCategory(categoryValue) {
                 return;
             }
         }
-
         // Remove category
-        const updatedCategories = { ...currentCategories };
-        delete updatedCategories[categoryValue];
-
+        const updatedCategories = currentCategories.filter(cat => cat !== categoryValue);
         const success = await saveCategoriesToGitHub(updatedCategories, token);
         
         if (success) {
@@ -796,18 +782,16 @@ function updateCategoriesList() {
     const categoriesListContent = document.getElementById('categoriesListContent');
     if (!categoriesListContent) return;
 
-    categoriesListContent.innerHTML = Object.entries(categories)
-        .map(([value, name]) => `
-            <div class="category-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 4px;">
-                <div>
-                    <strong>${name}</strong> (${value})
-                </div>
-                <button onclick="deleteCategory('${value}')" class="delete-button" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                    מחק
-                </button>
+    categoriesListContent.innerHTML = categories.map((name, index) => `
+        <div class="category-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 4px;">
+            <div>
+                <strong>${name}</strong>
             </div>
-        `)
-        .join('');
+            <button onclick="deleteCategory('${name}')" class="delete-button" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                מחק
+            </button>
+        </div>
+    `).join('');
 }
 
 // Update category selects in all forms
@@ -825,10 +809,10 @@ function updateCategorySelects() {
         const isFilter = select.id === 'categoryFilter';
         select.innerHTML = isFilter ? '<option value="all">כל הקטגוריות</option>' : '';
 
-        // Add all categories
-        Object.entries(categories).forEach(([value, name]) => {
+        // Add all categories in Hebrew
+        categories.forEach(name => {
             const option = document.createElement('option');
-            option.value = value;
+            option.value = name;
             option.textContent = name;
             select.appendChild(option);
         });
