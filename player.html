@@ -622,6 +622,15 @@
                 });
             }
         });
+
+        // --- Ensure player always loads on page entry ---
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.YT && typeof YT.Player === 'function') {
+                loadOrReloadPlayer();
+            } else {
+                window.onYouTubeIframeAPIReady = loadOrReloadPlayer;
+            }
+        });
     </script>
 </body>
 </html> 
