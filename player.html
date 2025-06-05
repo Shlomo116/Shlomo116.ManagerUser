@@ -42,6 +42,7 @@
             flex: 1;
             display: flex;
             gap: 2rem;
+            flex-direction: row-reverse;
         }
 
         header {
@@ -86,12 +87,16 @@
         }
 
         .player-container {
-            flex: 1;
+            width: 28vw;
+            min-width: 340px;
+            max-width: 420px;
             background-color: white;
             border-radius: var(--border-radius);
             box-shadow: var(--card-shadow);
-            padding: 2rem;
+            padding: 1rem 1rem 0.5rem 1rem;
             margin-top: 2rem;
+            height: fit-content;
+            align-self: flex-start;
         }
 
         #player {
@@ -102,13 +107,14 @@
         }
 
         .sidebar {
-            width: var(--sidebar-width);
+            flex: 1;
             background-color: white;
             border-radius: var(--border-radius);
             box-shadow: var(--card-shadow);
             padding: 1.5rem;
             margin-top: 2rem;
             height: fit-content;
+            min-width: 0;
         }
 
         .sidebar h3 {
