@@ -87,9 +87,9 @@
         }
 
         .player-container {
-            width: 28vw;
-            min-width: 340px;
-            max-width: 420px;
+            width: 48vw;
+            min-width: 520px;
+            max-width: 900px;
             background-color: white;
             border-radius: var(--border-radius);
             box-shadow: var(--card-shadow);
@@ -211,6 +211,26 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Spinner styles */
+        .spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80px;
+        }
+        .spinner div {
+            width: 24px;
+            height: 24px;
+            border: 4px solid #3498db;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -228,6 +248,7 @@
         <div class="sidebar">
             <h3>סרטים מאותה קטגוריה</h3>
             <div class="related-movies" id="relatedMovies">
+                <div class="spinner" id="relatedSpinner"><div></div></div>
                 <!-- Related movies will be added here dynamically -->
             </div>
         </div>
@@ -303,6 +324,10 @@
         // Display related movies
         async function displayRelatedMovies() {
             const videoId = getVideoIdFromUrl();
+            const relatedMoviesContainer = document.getElementById('relatedMovies');
+            const spinner = document.getElementById('relatedSpinner');
+            if (spinner) spinner.style.display = 'flex';
+            // טען סרטים
             const movies = await loadMoviesFromGitHub();
             // סינון סרטים עם videoId תקני בלבד
             const validMovies = movies.filter(movie => {
@@ -317,8 +342,8 @@
             });
 
             if (!currentMovie) {
-                console.warn('Movie not found in DB, showing player only:', videoId);
-                document.getElementById('relatedMovies').innerHTML = '<div style="text-align:center;color:#888;">לא נמצאו סרטים קשורים</div>';
+                if (spinner) spinner.style.display = 'none';
+                relatedMoviesContainer.innerHTML = '<div style="text-align:center;color:#888;">לא נמצאו סרטים קשורים</div>';
                 return;
             }
 
@@ -327,7 +352,7 @@
                 return movie.category === currentMovie.category && movieVideoId !== videoId;
             });
 
-            const relatedMoviesContainer = document.getElementById('relatedMovies');
+            if (spinner) spinner.style.display = 'none';
             if (relatedMovies.length === 0) {
                 relatedMoviesContainer.innerHTML = '<div style="text-align:center;color:#888;">לא נמצאו סרטים קשורים</div>';
                 return;
